@@ -497,8 +497,54 @@ int main(int argc, char *argv[]) {
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
             if (tiempo_fin > 1.5f) {
-                // Dejamos de actualizar 'done = 1' para evitar el cierre forzado
-                // Aquí el juego se queda congelado mostrando el último cuadro renderizado
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color Rojo para el cartel
+
+                //Letra G
+                dibujar_linea_pantalla(320, 220, 300, 220);
+                dibujar_linea_pantalla(300, 220, 300, 260);
+                dibujar_linea_pantalla(300, 260, 320, 260);
+                dibujar_linea_pantalla(320, 260, 320, 245);
+                dibujar_linea_pantalla(320, 245, 310, 245);
+
+                //Letra A
+                dibujar_linea_pantalla(330, 260, 340, 220);
+                dibujar_linea_pantalla(340, 220, 350, 260);
+                dibujar_linea_pantalla(335, 245, 345, 245);
+
+                //Letra M
+                dibujar_linea_pantalla(360, 260, 360, 220);
+                dibujar_linea_pantalla(360, 220, 370, 240);
+                dibujar_linea_pantalla(370, 240, 380, 220);
+                dibujar_linea_pantalla(380, 220, 380, 260);
+
+                //Letra E
+                dibujar_linea_pantalla(410, 220, 390, 220);
+                dibujar_linea_pantalla(390, 220, 390, 260);
+                dibujar_linea_pantalla(390, 260, 410, 260);
+                dibujar_linea_pantalla(390, 240, 405, 240);
+
+                //Letra O
+                dibujar_linea_pantalla(430, 220, 450, 220);
+                dibujar_linea_pantalla(450, 220, 450, 260);
+                dibujar_linea_pantalla(450, 260, 430, 260);
+                dibujar_linea_pantalla(430, 260, 430, 220);
+
+                //Letra V
+                dibujar_linea_pantalla(460, 220, 470, 260);
+                dibujar_linea_pantalla(470, 260, 480, 220);
+
+                //Letra E
+                dibujar_linea_pantalla(510, 220, 490, 220);
+                dibujar_linea_pantalla(490, 220, 490, 260);
+                dibujar_linea_pantalla(490, 260, 510, 260);
+                dibujar_linea_pantalla(490, 240, 505, 240);
+
+                //Letra R
+                dibujar_linea_pantalla(520, 260, 520, 220);
+                dibujar_linea_pantalla(520, 220, 540, 220);
+                dibujar_linea_pantalla(540, 220, 540, 240);
+                dibujar_linea_pantalla(540, 240, 520, 240);
+                dibujar_linea_pantalla(520, 240, 540, 260);
             }
         }
         // END código del alumno
