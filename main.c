@@ -209,11 +209,21 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
 // Asterisco para las vidas restantes.
 
 static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
+    // Si 's' es muy chico (ej: menor a 5), significa que Git/SDL está dibujando 
+    // la mira central, un punto, o la interfaz fina. ¡Dibujamos el asterisco original!
+    if (s < 5) {
+        SDL_RenderDrawLine(r, x, y - s, x, y + s);
+        SDL_RenderDrawLine(r, x - s, y - s / 2, x + s, y + s / 2);
+        SDL_RenderDrawLine(r, x - s, y + s / 2, x + s, y - s / 2);
+        return; // Salimos de la función para no dibujar el tanque encima
+    }
+
+    // --- SI 'S' ES GRANDE: SIGNIFICA QUE SON LAS VIDAS ---
     // 1. Color ROJO
     SDL_SetRenderDrawColor(r, 130, 0, 0, 255);
 
-    // Usamos 's' para calcular el tamaño y eliminar el warning
-    int tam = s * 3; // Si 's' originalmente valía 8, tam va a ser 24. Si queda chico, podés cambiar el 3 por otro número.
+    // Escalamos el tamaño usando 's' para que sea proporcional y no rompa nada
+    int tam = s * 3; 
 
     // 2. Chasis (Cuerpo inferior)
     SDL_RenderDrawLine(r, x - tam * 0.4f, y + tam * 0.4f, x + tam * 1.6f, y + tam * 0.4f);
