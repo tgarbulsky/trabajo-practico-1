@@ -25,7 +25,7 @@ misil.o: misil.c misil.h
 stl.o: stl.c stl.h
 mundo.o: mundo.c mundo.h lista.h tanque.h obstaculo.h modelo.h
 animaciones.o: animaciones.c animaciones.h
-motor3d.o: motor3d.c
+
 
 valgrind: battlezone
 	valgrind --leak-check=full --show-leak-kinds=all ./battlezone
