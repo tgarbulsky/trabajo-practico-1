@@ -209,40 +209,12 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
 // Asterisco para las vidas restantes.
 
 static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
-    // Si 's' es muy chico (ej: menor a 5), significa que Git/SDL está dibujando 
-    // la mira central, un punto, o la interfaz fina. ¡Dibujamos el asterisco original!
-    if (s < 5) {
-        SDL_RenderDrawLine(r, x, y - s, x, y + s);
-        SDL_RenderDrawLine(r, x - s, y - s / 2, x + s, y + s / 2);
-        SDL_RenderDrawLine(r, x - s, y + s / 2, x + s, y - s / 2);
-        return; // Salimos de la función para no dibujar el tanque encima
-    }
-
-    // --- SI 'S' ES GRANDE: SIGNIFICA QUE SON LAS VIDAS ---
-    // 1. Color ROJO
-    SDL_SetRenderDrawColor(r, 130, 0, 0, 255);
-
-    // Escalamos el tamaño usando 's' para que sea proporcional y no rompa nada
-    int tam = s * 3; 
-
-    // 2. Chasis (Cuerpo inferior)
-    SDL_RenderDrawLine(r, x - tam * 0.4f, y + tam * 0.4f, x + tam * 1.6f, y + tam * 0.4f);
-    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x - tam * 0.4f, y + tam * 0.4f);
-    SDL_RenderDrawLine(r, x + tam * 1.8f, y,             x + tam * 1.6f, y + tam * 0.4f);
-    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x + tam * 1.8f, y);
-
-    // 3. Torreta (Cuerpo superior)
-    SDL_RenderDrawLine(r, x - tam * 0.3f, y,             x - tam * 0.1f, y - tam * 0.4f);
-    SDL_RenderDrawLine(r, x - tam * 0.1f, y - tam * 0.4f, x + tam * 1.4f, y - tam * 0.1f);
-    SDL_RenderDrawLine(r, x + tam * 1.4f, y - tam * 0.1f, x + tam * 1.8f, y);
-
-    // 4. Cañón (Rectángulo fino a la derecha)
-    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.16f);
-    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.06f, x + tam * 1.7f, y - tam * 0.06f);
-    SDL_RenderDrawLine(r, x + tam * 1.7f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.06f);
-
-    // 5. Restauramos a BLANCO
-    SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
+    const modelo_t *modelo_vida = modelo_buscar(lista_modelos, "*");
+    float x_vida = 30.0f;
+    float y_vida = 30.0f;
+    for (int i = 0; i < (vidas - 1); i++) {
+    modelo_dibujar(renderer, modelo_vida, x_vida, y_vida, 1.0f, 0.0f);
+    x_vida += 25.0f;
 }
 
 // END código del alumno (funciones auxiliares)
