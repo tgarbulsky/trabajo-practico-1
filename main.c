@@ -441,7 +441,7 @@ int main(int argc, char *argv[]) {
 
         // Vidas restantes con '*'
         for (int i = 0; i < mundo_vidas(mundo); i++)
-            dibujar_asterisco(renderer, 30 + i * 55, 30, 9);
+            dibujar_asterisco(renderer, 30 + i * 70, 30, 9);
 
         // Puntaje
         dibujar_numero(renderer, VENTANA_ANCHO - 30, 20, 10, mundo_puntaje(mundo));
