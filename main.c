@@ -497,7 +497,7 @@ int main(int argc, char *argv[]) {
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
             if (tiempo_fin > 1.5f) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color Rojo para el cartel
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color Rojo porque pocho lo pidió
 
                 //Letra G
                 dibujar_linea_pantalla(320, 220, 300, 220);
