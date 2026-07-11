@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-       // 5. Vidrio roto encima de todo usando el modelo "#"
+// 5. Vidrio roto encima de todo usando el modelo "#"
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
@@ -453,16 +453,18 @@ int main(int argc, char *argv[]) {
                     float x0, y0, x1, y1;
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
                     
-                    // Reseteamos la matriz/stack para dibujar en 2D (plano sobre la pantalla)
-                    // NOTA: Si tu función se llama distinto (ej. matriz_cargar_identidad), cambiala acá:
-                    matriz_identidad(stack); 
+                    // x0 e y0 vienen entre -1.0 y 1.0 (espacio normalizado de pantalla)
+                    // Los convertimos manualmente a píxeles sin pasar por la cámara 3D
+                    float px = (VENTANA_ANCHO / 2.0f) * (1.0f + x0);
+                    float py = (VENTANA_ALTO / 2.0f) * (1.0f - y0); // Invertimos Y para SDL
                     
-                    // Pasamos directamente x0 e y0 que ya vienen de la animación entre -1 y 1
-                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 0.0f, 0.0f);
+                    // Reseteamos el stack de transformaciones a la matriz del HUD
+                    // Si tu render_modelo escala internamente, pasale px, py directamente.
+                    // Si render_modelo usa el stack, podés mapearlo con las funciones de tu TP.
+                    render_modelo(renderer, stack, modelo_cristal, px, py, 0.0f, 0.0f);
                 }
             }
         }
-
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
