@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // 5. Vidrio roto encima de todo usando el modelo "#"
+       // 5. Vidrio roto encima de todo usando el modelo "#"
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
@@ -453,13 +453,12 @@ int main(int argc, char *argv[]) {
                     float x0, y0, x1, y1;
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
                     
-                    // Convertimos la posición de la animación a píxeles de pantalla reales
-                    int sx, sy;
-                    punto_a_pantalla(x0, y0, &sx, &sy);
+                    // Reseteamos la matriz/stack para dibujar en 2D (plano sobre la pantalla)
+                    // NOTA: Si tu función se llama distinto (ej. matriz_cargar_identidad), cambiala acá:
+                    matriz_identidad(stack); 
                     
-                    // Dibujamos el modelo '#' pasándole directamente los píxeles (sx, sy)
-                    // Si render_modelo necesita float, los casteamos inline
-                    render_modelo(renderer, stack, modelo_cristal, (float)sx, (float)sy, 0.0f, 0.0f);
+                    // Pasamos directamente x0 e y0 que ya vienen de la animación entre -1 y 1
+                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 0.0f, 0.0f);
                 }
             }
         }
