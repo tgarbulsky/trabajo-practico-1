@@ -452,8 +452,18 @@ int main(int argc, char *argv[]) {
                 for (size_t i = 0; i < rajaduras; i++) {
                     float x0, y0, x1, y1;
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
-                    // Renderiza la etiqueta '#' en la posición de la rajadura
-                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 0.0f, 0.0f);
+                    
+                    // Convertimos la posición de la animación a píxeles de pantalla reales
+                    int sx, sy;
+                    punto_a_pantalla(x0, y0, &sx, &sy);
+                    
+                    // Como el modelo '#' ya está centrado en su origen, lo trasladamos
+                    // temporalmente en la pila para renderizarlo plano en la pantalla (2D)
+                    pila_push(stack);
+                    pila_trasladar(stack, sx, sy);
+                    // Pasamos 0.0f en los parámetros de posición de render_modelo para que use la traslación de la pila
+                    render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 0.0f, 0.0f);
+                    pila_pop(stack);
                 }
             }
         }
