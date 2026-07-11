@@ -493,10 +493,13 @@ int main(int argc, char *argv[]) {
             SDL_RenderDrawLine(renderer, sx0, sy0, sx1, sy1);
         }
 
-        // Fin del juego: se muestra la última animación y se cierra
+        // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
-            if (tiempo_fin > 1.5f) done = 1;
+            if (tiempo_fin > 1.5f) {
+                // Dejamos de actualizar 'done = 1' para evitar el cierre forzado
+                // Aquí el juego se queda congelado mostrando el último cuadro renderizado
+            }
         }
         // END código del alumno
 
@@ -512,6 +515,7 @@ int main(int argc, char *argv[]) {
         ticks = SDL_GetTicks();
     }
 
+    // El juego solo llega acá cuando el usuario decide salir (por ejemplo, cerrando la ventana o tocando ESC)
     // BEGIN código del alumno
     animacion_destruir(anim_cristal);
     animacion_destruir(anim_explosion);
