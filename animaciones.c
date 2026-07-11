@@ -17,13 +17,13 @@
 typedef struct {
     float dist;      // distancia horizontal recorrida desde el centro
     float z, vz;     // altura y velocidad vertical (tiro oblicuo)
-    float ang;       // dirección de eyección (múltiplo de 60°)
+    float ang;       // dirección de eyección 
     float rot, vrot; // rotación propia acumulada y su velocidad
     bool en_suelo;
 } pieza_t;
 
 typedef struct {
-    float x0, y0, x1, y1; // extremos en coordenadas normalizadas [-1, 1]
+    float x0, y0, x1, y1;
 } linea_t;
 
 struct animacion {
@@ -73,7 +73,6 @@ void animacion_iniciar_cristal(animacion_t *a) {
     a->tiempo = 0;
     a->visibles = 0;
 
-    // Rajaduras: cada línea nace cerca del centro y se aleja hacia afuera
     for (size_t i = 0; i < CRISTAL_LINEAS; i++) {
         float ang = aleatorio(-(float)M_PI, (float)M_PI);
         float r0 = aleatorio(0.0f, 0.4f);
