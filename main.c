@@ -210,26 +210,26 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
 
 static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
     // 1. Color ROJO
-    SDL_SetRenderDrawColor(r, 130, 0, 0, 255); // Un rojo un poco más oscuro/retro, o 255 para rojo furioso
+    SDL_SetRenderDrawColor(r, 130, 0, 0, 255);
 
-    // Tamaño base ideal para que se vea grande y nítido
-    int tam = 24; 
+    // Usamos 's' para calcular el tamaño y eliminar el warning
+    int tam = s * 3; // Si 's' originalmente valía 8, tam va a ser 24. Si queda chico, podés cambiar el 3 por otro número.
 
     // 2. Chasis (Cuerpo inferior)
-    SDL_RenderDrawLine(r, x - tam * 0.4f, y + tam * 0.4f, x + tam * 1.6f, y + tam * 0.4f); // Línea inferior
-    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x - tam * 0.4f, y + tam * 0.4f); // Diagonal trasera abajo
-    SDL_RenderDrawLine(r, x + tam * 1.8f, y,             x + tam * 1.6f, y + tam * 0.4f); // Diagonal delantera abajo
-    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x + tam * 1.8f, y);             // Línea media (unión chasis-torreta)
+    SDL_RenderDrawLine(r, x - tam * 0.4f, y + tam * 0.4f, x + tam * 1.6f, y + tam * 0.4f);
+    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x - tam * 0.4f, y + tam * 0.4f);
+    SDL_RenderDrawLine(r, x + tam * 1.8f, y,             x + tam * 1.6f, y + tam * 0.4f);
+    SDL_RenderDrawLine(r, x - tam * 0.6f, y,             x + tam * 1.8f, y);
 
     // 3. Torreta (Cuerpo superior)
-    SDL_RenderDrawLine(r, x - tam * 0.3f, y,             x - tam * 0.1f, y - tam * 0.4f); // Subida empinada trasera
-    SDL_RenderDrawLine(r, x - tam * 0.1f, y - tam * 0.4f, x + tam * 1.4f, y - tam * 0.1f); // Techo en bajada suave hacia el cañón
-    SDL_RenderDrawLine(r, x + tam * 1.4f, y - tam * 0.1f, x + tam * 1.8f, y);             // Cierre de la trompa
+    SDL_RenderDrawLine(r, x - tam * 0.3f, y,             x - tam * 0.1f, y - tam * 0.4f);
+    SDL_RenderDrawLine(r, x - tam * 0.1f, y - tam * 0.4f, x + tam * 1.4f, y - tam * 0.1f);
+    SDL_RenderDrawLine(r, x + tam * 1.4f, y - tam * 0.1f, x + tam * 1.8f, y);
 
     // 4. Cañón (Rectángulo fino a la derecha)
-    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.16f); // Línea superior cañón
-    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.06f, x + tam * 1.7f, y - tam * 0.06f); // Línea inferior cañón
-    SDL_RenderDrawLine(r, x + tam * 1.7f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.06f); // Punta del cañón
+    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.16f);
+    SDL_RenderDrawLine(r, x + tam * 1.1f, y - tam * 0.06f, x + tam * 1.7f, y - tam * 0.06f);
+    SDL_RenderDrawLine(r, x + tam * 1.7f, y - tam * 0.16f, x + tam * 1.7f, y - tam * 0.06f);
 
     // 5. Restauramos a BLANCO
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
