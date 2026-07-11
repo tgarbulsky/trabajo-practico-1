@@ -207,17 +207,7 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
 }
 
 // Asterisco para las vidas restantes.
-¡Perfecto! Con este plano detallado del tanque original de Battle Zone vemos exactamente la geometría clásica:
 
-El cañón sale hacia la derecha y es un rectángulo fino cerrado.
-
-La torreta sube desde la izquierda con una inclinación alta y luego baja suavemente en diagonal hacia la derecha hasta encontrarse con el cañón.
-
-El chasis (base inferior) es el trapecio clásico invertido.
-
-Para calcar esta silueta a la perfección usando líneas limpias y escaladas con tam, reemplazá el código por esta versión exacta:
-
-C
 static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
     // 1. Color ROJO
     SDL_SetRenderDrawColor(r, 130, 0, 0, 255); // Un rojo un poco más oscuro/retro, o 255 para rojo furioso
