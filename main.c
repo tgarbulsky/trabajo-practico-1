@@ -444,7 +444,10 @@ int main(int argc, char *argv[]) {
             }
         }
 
+
 // 5. Vidrio roto encima de todo usando el modelo "#"
+  // 5. Vidrio roto encima de todo usando el modelo "#"
+
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
