@@ -206,16 +206,7 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
     } while (n > 0);
 }
 
-// Asterisco para las vidas restantes.
 
-static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
-    const modelo_t *modelo_vida = modelo_buscar(lista_modelos, "*");
-    float x_vida = 30.0f;
-    float y_vida = 30.0f;
-    for (int i = 0; i < (vidas - 1); i++) {
-    modelo_dibujar(renderer, modelo_vida, x_vida, y_vida, 1.0f, 0.0f);
-    x_vida += 25.0f;
-}
 
 // END código del alumno (funciones auxiliares)
 
@@ -411,72 +402,59 @@ int main(int argc, char *argv[]) {
 // ---- HUD ----
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
-        // 1. Cantidad de vidas restantes (sin incluir la actual) utilizando el carácter *
-        // Buscamos el modelo en la lista de modelos
+        // 1. Vidas restantes con el modelo '*' (sin incluir la actual)
         const modelo_t *modelo_vida = modelo_buscar(lista_modelos, "*");
         if (modelo_vida != NULL) {
-            float x_vida = 30.0f;
-            float y_vida = 30.0f;
-            // mundo_vidas(mundo) - 1 para no incluir la que se juega
+            float x_vida = -0.9f; // Coordenadas de pantalla normalizadas si render_modelo escala a HUD
+            float y_vida = 0.8f;  // Ajustá estos valores si sale corrido de la pantalla
             for (int i = 0; i < (mundo_vidas(mundo) - 1); i++) {
-                // Si render_modelo dibuja usando la perspectiva actual, podés usarla.
-                // Si necesitas que quede fijo en pantalla (2D), asegurate de usar la función de texto correcta.
-                // Suponiendo que render_modelo sirve pasándole coordenadas:
                 render_modelo(renderer, stack, modelo_vida, x_vida, y_vida, 0.0f, 0.0f);
-                x_vida += 25.0f; 
+                x_vida += 0.1f; // Espaciado
             }
         }
 
-        // 2. Puntaje total del juego (Ya lo tenías bien)
+        // 2. Puntaje
         dibujar_numero(renderer, VENTANA_ANCHO - 30, 20, 10, mundo_puntaje(mundo));
 
-        // Cálculo de ángulos para la mira y mensajes
+        // 3. Mira del tanque con '+' o '-' según puntería
         bool enemigo_en_mira = false;
         float rumbo_error = 0;
         if (enemigo != NULL) {
             float dx = tanque_x(enemigo) - px, dy = tanque_y(enemigo) - py;
-            float dist = sqrtf(dx * dx + dy * dy);
+            float dist = sqrtf(dx * dx + dy * dy); // Se usa acá para el alcance del misil
             rumbo_error = normalizar_angulo(atan2f(dy, dx) - pp);
-            // El enunciado dice: "Si el enemigo está a menos de 0.15 radianes para cada lado..."
-            enemigo_en_mira = fabsf(rumbo_error) < 0.15f;
+            enemigo_en_mira = fabsf(rumbo_error) < 0.15f && dist <= ALCANCE_MISIL;
         }
 
-        // 3. La mira del tanque (+ si está a tiro, - si no)
-        const modelo_t *modelo_mira = NULL;
-        if (enemigo_en_mira) {
-            modelo_mira = modelo_buscar(lista_modelos, "+");
-        } else {
-            modelo_mira = modelo_buscar(lista_modelos, "-");
-        }
-
+        const modelo_t *modelo_mira = modelo_buscar(lista_modelos, enemigo_en_mira ? "+" : "-");
         if (modelo_mira != NULL) {
-            // Dibujamos la mira en el centro de la pantalla
+            // Se dibuja en el centro (0,0) de la pantalla
             render_modelo(renderer, stack, modelo_mira, 0.0f, 0.0f, 0.0f, 0.0f);
         }
 
-        // 4. Mensajes de rango de visión (Fuera del rango de 1 radián para cada lado)
+        // 4. Indicador de dirección del enemigo cuando queda fuera de la vista (> 1 rad)
         if (enemigo != NULL && fabsf(rumbo_error) > 1.0f) {
-            // Entre 1 y 2.44 radianes -> Izquierda
+            // Si tenés funciones de texto de la cátedra podés descomentar y usarlas acá:
             if (rumbo_error >= 1.0f && rumbo_error <= 2.44f) {
-                // Acá deberías usar la función de tu TP para escribir "IZQUIERDA" en la pantalla
-                // Ejemplo ficticio si tenés un dibujador de texto:
-                // dibujar_cadena(renderer, lista_modelos, "IZQUIERDA", 50, VENTANA_ALTO / 2);
-            } 
-            // Entre -1 y -2.44 radianes -> Derecha
-            else if (rumbo_error <= -1.0f && rumbo_error >= -2.44f) {
-                // dibujar_cadena(renderer, lista_modelos, "DERECHA", VENTANA_ANCHO - 150, VENTANA_ALTO / 2);
-            } 
-            // Mayor en módulo a 2.44 -> Detrás
-            else if (fabsf(rumbo_error) > 2.44f) {
-                // dibujar_cadena(renderer, lista_modelos, "DETRAS", VENTANA_ANCHO / 2 - 50, VENTANA_ALTO - 50);
+                // "IZQUIERDA"
+            } else if (rumbo_error <= -1.0f && rumbo_error >= -2.44f) {
+                // "DERECHA"
+            } else if (fabsf(rumbo_error) > 2.44f) {
+                // "DETRAS"
             }
         }
-    // Vidrio roto si la animación está activa
+
+        // 5. Vidrio roto encima de todo usando el modelo "#"
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
-                // Se dibuja en el centro (0,0) tapando el frente
-                render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 0.0f, 0.0f);
+                size_t rajaduras = animacion_cristal_visibles(anim_cristal);
+                for (size_t i = 0; i < rajaduras; i++) {
+                    float x0, y0, x1, y1;
+                    animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
+                    // Renderiza la etiqueta '#' en la posición de la rajadura
+                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 0.0f, 0.0f);
+                }
             }
         }
 
