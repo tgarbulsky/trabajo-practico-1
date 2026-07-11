@@ -457,13 +457,9 @@ int main(int argc, char *argv[]) {
                     int sx, sy;
                     punto_a_pantalla(x0, y0, &sx, &sy);
                     
-                    // Como el modelo '#' ya está centrado en su origen, lo trasladamos
-                    // temporalmente en la pila para renderizarlo plano en la pantalla (2D)
-                    pila_push(stack);
-                    pila_trasladar(stack, sx, sy);
-                    // Pasamos 0.0f en los parámetros de posición de render_modelo para que use la traslación de la pila
-                    render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 0.0f, 0.0f);
-                    pila_pop(stack);
+                    // Dibujamos el modelo '#' pasándole directamente los píxeles (sx, sy)
+                    // Si render_modelo necesita float, los casteamos inline
+                    render_modelo(renderer, stack, modelo_cristal, (float)sx, (float)sy, 0.0f, 0.0f);
                 }
             }
         }
