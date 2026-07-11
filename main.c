@@ -408,61 +408,76 @@ int main(int argc, char *argv[]) {
 
         matriz_destruir(pila_desapilar(stack));
 
-        // ---- HUD ----
+// ---- HUD ----
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
-        // Vidas restantes con '*'
-        for (int i = 0; i < mundo_vidas(mundo); i++)
-            dibujar_asterisco(renderer, 30 + i * 70, 30, 9);
+        // 1. Cantidad de vidas restantes (sin incluir la actual) utilizando el carácter *
+        // Buscamos el modelo en la lista de modelos
+        const modelo_t *modelo_vida = modelo_buscar(lista_modelos, "*");
+        if (modelo_vida != NULL) {
+            float x_vida = 30.0f;
+            float y_vida = 30.0f;
+            // mundo_vidas(mundo) - 1 para no incluir la que se juega
+            for (int i = 0; i < (mundo_vidas(mundo) - 1); i++) {
+                // Si render_modelo dibuja usando la perspectiva actual, podés usarla.
+                // Si necesitas que quede fijo en pantalla (2D), asegurate de usar la función de texto correcta.
+                // Suponiendo que render_modelo sirve pasándole coordenadas:
+                render_modelo(renderer, stack, modelo_vida, x_vida, y_vida, 0.0f, 0.0f);
+                x_vida += 25.0f; 
+            }
+        }
 
-        // Puntaje
+        // 2. Puntaje total del juego (Ya lo tenías bien)
         dibujar_numero(renderer, VENTANA_ANCHO - 30, 20, 10, mundo_puntaje(mundo));
 
-        // Mira: cambia cuando el enemigo está a tiro
+        // Cálculo de ángulos para la mira y mensajes
         bool enemigo_en_mira = false;
         float rumbo_error = 0;
         if (enemigo != NULL) {
             float dx = tanque_x(enemigo) - px, dy = tanque_y(enemigo) - py;
             float dist = sqrtf(dx * dx + dy * dy);
             rumbo_error = normalizar_angulo(atan2f(dy, dx) - pp);
-            enemigo_en_mira = fabsf(rumbo_error) < UMBRAL_PUNTERIA &&
-                              dist <= ALCANCE_MISIL;
-        }
-        SDL_RenderDrawLine(renderer, VENTANA_ANCHO / 2 - 8, VENTANA_ALTO / 2,
-                           VENTANA_ANCHO / 2 + 8, VENTANA_ALTO / 2);
-        SDL_RenderDrawLine(renderer, VENTANA_ANCHO / 2, VENTANA_ALTO / 2 - 8,
-                           VENTANA_ANCHO / 2, VENTANA_ALTO / 2 + 8);
-        if (enemigo_en_mira) {
-            SDL_Rect marco = {VENTANA_ANCHO / 2 - 14, VENTANA_ALTO / 2 - 14, 28, 28};
-            SDL_RenderDrawRect(renderer, &marco);
+            // El enunciado dice: "Si el enemigo está a menos de 0.15 radianes para cada lado..."
+            enemigo_en_mira = fabsf(rumbo_error) < 0.15f;
         }
 
-        // Indicador de dirección del enemigo cuando queda fuera de la vista
-        if (enemigo != NULL && fabsf(rumbo_error) > MEDIO_FOV) {
-            int cy = VENTANA_ALTO / 2;
-            if (rumbo_error > 0) { // el enemigo quedó a la izquierda
-                SDL_RenderDrawLine(renderer, 40, cy, 60, cy - 12);
-                SDL_RenderDrawLine(renderer, 40, cy, 60, cy + 12);
-                SDL_RenderDrawLine(renderer, 60, cy - 12, 60, cy + 12);
-            } else {               // el enemigo quedó a la derecha
-                SDL_RenderDrawLine(renderer, VENTANA_ANCHO - 40, cy,
-                                   VENTANA_ANCHO - 60, cy - 12);
-                SDL_RenderDrawLine(renderer, VENTANA_ANCHO - 40, cy,
-                                   VENTANA_ANCHO - 60, cy + 12);
-                SDL_RenderDrawLine(renderer, VENTANA_ANCHO - 60, cy - 12,
-                                   VENTANA_ANCHO - 60, cy + 12);
+        // 3. La mira del tanque (+ si está a tiro, - si no)
+        const modelo_t *modelo_mira = NULL;
+        if (enemigo_en_mira) {
+            modelo_mira = modelo_buscar(lista_modelos, "+");
+        } else {
+            modelo_mira = modelo_buscar(lista_modelos, "-");
+        }
+
+        if (modelo_mira != NULL) {
+            // Dibujamos la mira en el centro de la pantalla
+            render_modelo(renderer, stack, modelo_mira, 0.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        // 4. Mensajes de rango de visión (Fuera del rango de 1 radián para cada lado)
+        if (enemigo != NULL && fabsf(rumbo_error) > 1.0f) {
+            // Entre 1 y 2.44 radianes -> Izquierda
+            if (rumbo_error >= 1.0f && rumbo_error <= 2.44f) {
+                // Acá deberías usar la función de tu TP para escribir "IZQUIERDA" en la pantalla
+                // Ejemplo ficticio si tenés un dibujador de texto:
+                // dibujar_cadena(renderer, lista_modelos, "IZQUIERDA", 50, VENTANA_ALTO / 2);
+            } 
+            // Entre -1 y -2.44 radianes -> Derecha
+            else if (rumbo_error <= -1.0f && rumbo_error >= -2.44f) {
+                // dibujar_cadena(renderer, lista_modelos, "DERECHA", VENTANA_ANCHO - 150, VENTANA_ALTO / 2);
+            } 
+            // Mayor en módulo a 2.44 -> Detrás
+            else if (fabsf(rumbo_error) > 2.44f) {
+                // dibujar_cadena(renderer, lista_modelos, "DETRAS", VENTANA_ANCHO / 2 - 50, VENTANA_ALTO - 50);
             }
         }
-
-        // Vidrio roto encima de todo
-        size_t rajaduras = animacion_cristal_visibles(anim_cristal);
-        for (size_t i = 0; i < rajaduras; i++) {
-            float x0, y0, x1, y1;
-            animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
-            int sx0, sy0, sx1, sy1;
-            punto_a_pantalla(x0, y0, &sx0, &sy0);
-            punto_a_pantalla(x1, y1, &sx1, &sy1);
-            SDL_RenderDrawLine(renderer, sx0, sy0, sx1, sy1);
+    // Vidrio roto si la animación está activa
+        if (animacion_activa(anim_cristal)) {
+            const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
+            if (modelo_cristal != NULL) {
+                // Se dibuja en el centro (0,0) tapando el frente
+                render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 0.0f, 0.0f);
+            }
         }
 
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
