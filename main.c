@@ -500,53 +500,53 @@ int main(int argc, char *argv[]) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color Rojo porque pocho lo pidió
 
                 //Letra G
-                SDL_RenderDrawLine(320, 220, 300, 220);
-                SDL_RenderDrawLine(300, 220, 300, 260);
-                SDL_RenderDrawLine(300, 260, 320, 260);
-                SDL_RenderDrawLine(320, 260, 320, 245);
-                SDL_RenderDrawLine(320, 245, 310, 245);
+            SDL_RenderDrawLine(renderer, 320, 220, 300, 220);
+            SDL_RenderDrawLine(renderer, 300, 220, 300, 260);
+            SDL_RenderDrawLine(renderer, 300, 260, 320, 260);
+            SDL_RenderDrawLine(renderer, 320, 260, 320, 245);
+            SDL_RenderDrawLine(renderer, 320, 245, 310, 245);
 
-                //Letra A
-                SDL_RenderDrawLine(330, 260, 340, 220);
-                SDL_RenderDrawLine(340, 220, 350, 260);
-                SDL_RenderDrawLine(335, 245, 345, 245);
+            //Letra A
+            SDL_RenderDrawLine(renderer, 330, 260, 340, 220);
+            SDL_RenderDrawLine(renderer, 340, 220, 350, 260);
+            SDL_RenderDrawLine(renderer, 335, 245, 345, 245);
 
-                //Letra M
-                SDL_RenderDrawLine(360, 260, 360, 220);
-                SDL_RenderDrawLine(360, 220, 370, 240);
-                SDL_RenderDrawLine(370, 240, 380, 220);
-                SDL_RenderDrawLine(380, 220, 380, 260);
+            //Letra M
+            SDL_RenderDrawLine(renderer, 360, 260, 360, 220);
+            SDL_RenderDrawLine(renderer, 360, 220, 370, 240);
+            SDL_RenderDrawLine(renderer, 370, 240, 380, 220);
+            SDL_RenderDrawLine(renderer, 380, 220, 380, 260);
 
-                //Letra E
-                SDL_RenderDrawLine(410, 220, 390, 220);
-                SDL_RenderDrawLine(390, 220, 390, 260);
-                SDL_RenderDrawLine(390, 260, 410, 260);
-                SDL_RenderDrawLine(390, 240, 405, 240);
+            //Letra E
+            SDL_RenderDrawLine(renderer, 410, 220, 390, 220);
+            SDL_RenderDrawLine(renderer, 390, 220, 390, 260);
+            SDL_RenderDrawLine(renderer, 390, 260, 410, 260);
+            SDL_RenderDrawLine(renderer, 390, 240, 405, 240);
 
-                //Letra O
-                SDL_RenderDrawLine(430, 220, 450, 220);
-                SDL_RenderDrawLine(450, 220, 450, 260);
-                SDL_RenderDrawLine(450, 260, 430, 260);
-                SDL_RenderDrawLine(430, 260, 430, 220);
+            //Letra O
+            SDL_RenderDrawLine(renderer, 430, 220, 450, 220);
+            SDL_RenderDrawLine(renderer, 450, 220, 450, 260);
+            SDL_RenderDrawLine(renderer, 450, 260, 430, 260);
+            SDL_RenderDrawLine(renderer, 430, 260, 430, 220);
 
-                //Letra V
-                SDL_RenderDrawLine(460, 220, 470, 260);
-                SDL_RenderDrawLine(470, 260, 480, 220);
+            //Letra V
+            SDL_RenderDrawLine(renderer, 460, 220, 470, 260);
+            SDL_RenderDrawLine(renderer, 470, 260, 480, 220);
 
-                //Letra E
-                SDL_RenderDrawLine(510, 220, 490, 220);
-                SDL_RenderDrawLine(490, 220, 490, 260);
-                SDL_RenderDrawLine(490, 260, 510, 260);
-                SDL_RenderDrawLine(490, 240, 505, 240);
+            //Letra E
+            SDL_RenderDrawLine(renderer, 510, 220, 490, 220);
+            SDL_RenderDrawLine(renderer, 490, 220, 490, 260);
+            SDL_RenderDrawLine(renderer, 490, 260, 510, 260);
+            SDL_RenderDrawLine(renderer, 490, 240, 505, 240);
 
-                //Letra R
-                SDL_RenderDrawLine(520, 260, 520, 220);
-                SDL_RenderDrawLine(520, 220, 540, 220);
-                SDL_RenderDrawLine(540, 220, 540, 240);
-                SDL_RenderDrawLine(540, 240, 520, 240);
-                SDL_RenderDrawLine(520, 240, 540, 260);
-            }
+            //Letra R
+            SDL_RenderDrawLine(renderer, 520, 260, 520, 220);
+            SDL_RenderDrawLine(renderer, 520, 220, 540, 220);
+            SDL_RenderDrawLine(renderer, 540, 220, 540, 240);
+            SDL_RenderDrawLine(renderer, 540, 240, 520, 240);
+            SDL_RenderDrawLine(renderer, 520, 240, 540, 260);
         }
+    }
         // END código del alumno
 
         SDL_RenderPresent(renderer);
