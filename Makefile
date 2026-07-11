@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -std=c99 -g $(shell sdl2-config --cflags)
 LDLIBS = $(shell sdl2-config --libs) -lm
 
 OBJS = main.o matriz.o pila.o lista.o cola.o modelo.o obstaculo.o \
-       tanque.o misil.o stl.o mundo.o animaciones.o motor3d.o
+       tanque.o misil.o stl.o mundo.o animaciones.o
 
 all: battlezone
 
