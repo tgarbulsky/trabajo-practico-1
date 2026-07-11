@@ -1,7 +1,3 @@
-# Makefile provisorio — TP1 Battle Zone
-# Requiere gcc y SDL2 (en Debian/Ubuntu: sudo apt install gcc libsdl2-dev)
-# En Windows: usar MSYS2/MinGW con mingw-w64-x86_64-SDL2.
-
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -g $(shell sdl2-config --cflags)
 LDLIBS = $(shell sdl2-config --libs) -lm
@@ -17,7 +13,6 @@ battlezone: $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Dependencias de cabeceras
 main.o: main.c modelo.h obstaculo.h tanque.h stl.h matriz.h pila.h lista.h mundo.h animaciones.h
 matriz.o: matriz.c matriz.h
 pila.o: pila.c pila.h
