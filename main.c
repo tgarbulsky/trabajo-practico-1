@@ -208,17 +208,20 @@ static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) 
 
 // Asterisco para las vidas restantes.
 static void dibujar_asterisco(SDL_Renderer *r, int x, int y, int s) {
-    // Oruga Izquierda
-    SDL_RenderDrawLine(r, x - s, y - s, x - s, y + s);
-    
-    // Oruga Derecha
-    SDL_RenderDrawLine(r, x + s, y - s, x + s, y + s);
-    
-    // Cuerpo Central (Línea horizontal que une las orugas)
-    SDL_RenderDrawLine(r, x - s, y, x + s, y);
-    
-    // Cañón (Hacia arriba)
-    SDL_RenderDrawLine(r, x, y, x, y - s * 1.5f);
+    // 1. Base del tanque (Cuerpo trapezoidal de perfil)
+    SDL_RenderDrawLine(r, x - s,     y + s / 2, x + s * 2, y + s / 2); // Línea inferior
+    SDL_RenderDrawLine(r, x - s / 2, y - s / 4, x + s * 1.5, y - s / 4); // Línea superior
+    SDL_RenderDrawLine(r, x - s,     y + s / 2, x - s / 2, y - s / 4); // Diagonal izquierda
+    SDL_RenderDrawLine(r, x + s * 2, y + s / 2, x + s * 1.5, y - s / 4); // Diagonal derecha
+
+    // 2. Torreta (Arriba de la base)
+    SDL_RenderDrawLine(r, x,         y - s / 4, x + s,     y - s / 4); // Base torreta (ya unida)
+    SDL_RenderDrawLine(r, x + s / 4, y - s / 2, x + s * 0.75, y - s / 2); // Techo torreta
+    SDL_RenderDrawLine(r, x,         y - s / 4, x + s / 4, y - s / 2); // Diagonal izq torreta
+    SDL_RenderDrawLine(r, x + s,     y - s / 4, x + s * 0.75, y - s / 2); // Diagonal der torreta
+
+    // 3. Cañón (Apuntando a la izquierda)
+    SDL_RenderDrawLine(r, x + s / 4, y - s / 3, x - s,     y - s / 3);
 }
 
 // END código del alumno (funciones auxiliares)
