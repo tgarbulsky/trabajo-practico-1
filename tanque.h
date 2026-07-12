@@ -2,67 +2,47 @@
 #define TANQUE_H
 
 #include <stdbool.h>
-#include <stddef.h>
-#include "obstaculo.h"
+#include "matriz.h"
 
+// Estructura opaca para representar un tanque
 typedef struct tanque tanque_t;
 
-typedef enum {
-    MOV_NINGUNO,
-    MOV_ADELANTE,
-    MOV_ATRAS,
-    MOV_GIRAR_IZQ,
-    MOV_GIRAR_DER
-} movimiento_e;
+// Estructura auxiliar para pasar los parámetros de configuración inicial
+typedef struct {
+    float x;
+    float y;
+    float angulo;
+    float velocidad;
+    int vida_maxima;
+    const char *ruta_modelo_stl; // Por si carga la malla desde un archivo STL
+} tanque_config_t;
 
-// Constructor y Destructor
-tanque_t *tanque_crear(float x, float y, float phi, int vidas);
-void      tanque_destruir(tanque_t *t);
+// Crea un tanque dinámicamente con una configuración inicial
+tanque_t *tanque_crear(const tanque_config_t *config);
 
-// Crea un tanque enemigo (con IA de movimiento aleatorio) en (x, y).
-// Devuelve NULL si la posición queda a menos de 5 metros de algún
-// obstáculo (o si falla la memoria); el llamador debe reintentar con
-// otra posición. Guarda la referencia a los obstáculos para evitar
-// atravesarlos al moverse.
-tanque_t *crear_tanque_enemigo(float x, float y, float phi, int vidas,
-                               obstaculo_t *obstaculos[], size_t num_obstaculos);
+// Destruye el tanque y libera su memoria asociada
+void tanque_destruir(tanque_t *tanque);
 
-// Asigna los obstáculos que el tanque no puede atravesar al moverse
-// (permite dárselos al jugador, cuyo constructor no los recibe).
-void tanque_asignar_obstaculos(tanque_t *t, obstaculo_t *obstaculos[],
-                               size_t num_obstaculos);
+// Actualiza la posición y estado del tanque en base al tiempo transcurrido (dt)
+void tanque_actualizar(tanque_t *tanque, float dt);
 
-// Getters públicos (Encapsulamiento para el Juego y el Render)
-float tanque_x(const tanque_t *t);
-float tanque_y(const tanque_t *t);
-float tanque_phi(const tanque_t *t);
-int   tanque_vidas(const tanque_t *t);
-float tanque_torreta(const tanque_t *t);
-bool  tanque_puede_disparar(const tanque_t *t);
+// Aplica una rotación al tanque sumando un delta de ángulo (en radianes)
+void tanque_rotar(tanque_t *tanque, float delta_angulo);
 
-// Acciones y Modificadores de Estado
-void tanque_girar(tanque_t *t, float delta_phi);
-void tanque_mover(tanque_t *t, float delta);
-void tanque_girar_torreta(tanque_t *t, float delta);
-void tanque_recibir_impacto(tanque_t *t);
+// Modifica la velocidad del tanque (frenado, reversa, aceleración)
+void tanque_establecer_velocidad(tanque_t *tanque, float nueva_velocidad);
 
-// Lógica de disparo: Intenta disparar. Si puede, crea el misil,
-// activa el cooldown y devuelve true.
-bool tanque_disparar(tanque_t *t);
+// Aplica daño al tanque restándole puntos de vida. Devuelve true si el tanque murió.
+bool tanque_recibir_danio(tanque_t *tanque, int danio);
 
-// Misil del tanque (cada tanque tiene a lo sumo un misil en vuelo).
-// Pre de los getters de posición: el misil está activo.
-bool  tanque_misil_activo(const tanque_t *t);
-float tanque_misil_x(const tanque_t *t);
-float tanque_misil_y(const tanque_t *t);
-float tanque_misil_phi(const tanque_t *t);
+// --- Getters ---
+void tanque_obtener_posicion(const tanque_t *tanque, float *x, float *y);
+float tanque_obtener_angulo(const tanque_t *tanque);
+int tanque_obtener_vida(const tanque_t *tanque);
+bool tanque_esta_vivo(const tanque_t *tanque);
 
-// Destruye el misil en vuelo (por ejemplo, tras impactar). Acepta que no haya misil.
-void tanque_misil_terminar(tanque_t *t);
+// Genera y devuelve la matriz de transformación (3x3) del tanque (Escalado * Rotación * Traslación)
+// Útil para pasársela al renderizador al momento de dibujar el modelo.
+matriz_t *tanque_obtener_matriz_transformacion(const tanque_t *tanque);
 
-// Lógica de Movimientos Sostenidos y Ciclo de Vida (Actualizador)
-void         tanque_iniciar_movimiento(tanque_t *t, movimiento_e mov);
-movimiento_e tanque_movimiento(const tanque_t *t);
-void         tanque_actualizar(tanque_t *t, float dt);
-
-#endif
+#endif // TANQUE_H

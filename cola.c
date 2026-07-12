@@ -1,84 +1,81 @@
 #include "cola.h"
 #include <stdlib.h>
 
-typedef struct nodo {
+// Nodo interno de la cola
+typedef struct nodo_cola {
     void *dato;
-    struct nodo *sig;
-} nodo_t;
+    struct nodo_cola *sig;
+} nodo_cola_t;
 
+// Estructura principal de la cola
 struct cola {
-    nodo_t *prim;
-    nodo_t *ult;
+    nodo_cola_t *primero;
+    nodo_cola_t *ultimo;
 };
 
-
-static nodo_t *crear_nodo(void *dato) {
-    nodo_t *nodo = malloc(sizeof(nodo_t));
-    if(nodo == NULL) return NULL;
-
-    nodo->dato = dato;
-    nodo->sig = NULL;
-
-    return nodo;
-}
-
-
-cola_t *cola_crear() {
+cola_t *cola_crear(void) {
     cola_t *c = malloc(sizeof(cola_t));
-    if(c == NULL) return NULL;
-
-    c->prim = NULL;
-    c->ult = NULL;
-
+    if (c == NULL) return NULL;
+    
+    c->primero = NULL;
+    c->ultimo = NULL;
     return c;
 }
 
-bool cola_esta_vacia(const cola_t *c) {
-    return c->prim == NULL;
+void cola_destruir(cola_t *cola, void (*destruir_dato)(void *)) {
+    if (cola == NULL) return;
+    
+    while (!cola_esta_vacia(cola)) {
+        void *dato = cola_desencolar(cola);
+        if (destruir_dato != NULL) {
+            destruir_dato(dato);
+        }
+    }
+    free(cola);
 }
 
-bool cola_encolar(cola_t *c, void *dato) {
-    nodo_t *n = crear_nodo(dato);
-    if(n == NULL) return false;
+bool cola_esta_vacia(const cola_t *cola) {
+    if (cola == NULL) return true;
+    return cola->primero == NULL;
+}
 
-    if(c->prim == NULL)
-        c->prim = n;
-    else
-        c->ult->sig = n;
+bool cola_encolar(cola_t *cola, void *valor) {
+    if (cola == NULL) return false;
 
-    c->ult = n;
+    nodo_cola_t *nuevo = malloc(sizeof(nodo_cola_t));
+    if (nuevo == NULL) return false;
+    
+    nuevo->dato = valor;
+    nuevo->sig = NULL;
 
+    if (cola_esta_vacia(cola)) {
+        cola->primero = nuevo;
+    } else {
+        cola->ultimo->sig = nuevo;
+    }
+    
+    cola->ultimo = nuevo;
     return true;
 }
 
-void *cola_ver_primero(const cola_t *c) {
-    if(c->prim == NULL) return NULL;
-
-    return c->prim->dato;
+void *cola_ver_primero(const cola_t *cola) {
+    if (cola == NULL || cola_esta_vacia(cola)) return NULL;
+    return cola->primero->dato;
 }
 
-void *cola_desencolar(cola_t *c) {
-    if(c->prim == NULL)
-        return NULL;
-
-    nodo_t *n = c->prim;
-    void *dato = n->dato;
-
-    c->prim = n->sig;
-    if(c->prim == NULL)
-        c->ult = NULL;
-
-    free(n);
-
+void *cola_desencolar(cola_t *cola) {
+    if (cola == NULL || cola_esta_vacia(cola)) return NULL;
+    
+    nodo_cola_t *aux = cola->primero;
+    void *dato = aux->dato;
+    
+    cola->primero = aux->sig;
+    
+    // Si la cola se quedó vacía, el último también debe apuntar a NULL
+    if (cola->primero == NULL) {
+        cola->ultimo = NULL;
+    }
+    
+    free(aux);
     return dato;
 }
-
-void cola_destruir(cola_t *c, void (*destruir_dato)(void *)) {
-    while(!cola_esta_vacia(c)) {
-        void *dato = cola_desencolar(c);
-        if(destruir_dato != NULL)
-            destruir_dato(dato);
-    }
-    free(c);
-}
-

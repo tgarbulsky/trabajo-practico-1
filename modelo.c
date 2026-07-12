@@ -1,77 +1,68 @@
 #include "modelo.h"
 #include <stdlib.h>
-#include <string.h>
 
+// Estructura interna para representar un punto bidimensional plano
+typedef struct {
+    float x;
+    float y;
+} punto2d_t;
+
+// Estructura principal del TDA Modelo
 struct modelo {
-    char *nombre;
-    float *coordenadas;
-    size_t ncoordenadas;
-    size_t *lineas;
-    size_t nlineas;
+    punto2d_t *puntos;
+    size_t cantidad_puntos;
 };
 
-modelo_t *modelo_crear(const char *nombre, const float *coordenadas, size_t ncoordenadas,
-                        const size_t *lineas, size_t nlineas) {
+modelo_t *modelo_crear(size_t cantidad_puntos) {
+    if (cantidad_puntos == 0) return NULL;
+
     modelo_t *m = malloc(sizeof(modelo_t));
     if (m == NULL) return NULL;
 
-    m->nombre = malloc(strlen(nombre) + 1);
-    if (m->nombre == NULL) { free(m); return NULL; }
-    strcpy(m->nombre, nombre);
+    m->puntos = malloc(cantidad_puntos * sizeof(punto2d_t));
+    if (m->puntos == NULL) {
+        free(m);
+        return NULL;
+    }
 
-    m->coordenadas = malloc(sizeof(float) * 3 * ncoordenadas);
-    if (m->coordenadas == NULL) { free(m->nombre); free(m); return NULL; }
-    memcpy(m->coordenadas, coordenadas, sizeof(float) * 3 * ncoordenadas);
-
-    m->lineas = malloc(sizeof(size_t) * 2 * nlineas);
-    if (m->lineas == NULL) { free(m->coordenadas); free(m->nombre); free(m); return NULL; }
-    memcpy(m->lineas, lineas, sizeof(size_t) * 2 * nlineas);
-
-    m->ncoordenadas = ncoordenadas;
-    m->nlineas = nlineas;
+    m->cantidad_puntos = cantidad_puntos;
     return m;
 }
 
 void modelo_destruir(modelo_t *m) {
-    free(m->nombre);
-    free(m->coordenadas);
-    free(m->lineas);
+    if (m == NULL) return;
+    free(m->puntos);
     free(m);
 }
 
-const char *modelo_nombre(const modelo_t *m) { 
-    return m->nombre; 
+void modelo_establecer_punto(modelo_t *m, size_t indice, float x, float y) {
+    if (m == NULL || indice >= m->cantidad_puntos) return;
+    m->puntos[indice].x = x;
+    m->puntos[indice].y = y;
 }
 
-const float *modelo_coordenadas(const modelo_t *m) { 
-    return m->coordenadas; 
+size_t modelo_obtener_cantidad_puntos(const modelo_t *m) {
+    return m ? m->cantidad_puntos : 0;
 }
 
-size_t modelo_ncoordenadas(const modelo_t *m) { 
-    return m->ncoordenadas; 
-}
+void modelo_dibujar(const modelo_t *m, const matriz_t *transformacion, SDL_Renderer *renderer) {
+    if (m == NULL || renderer == NULL || m->cantidad_puntos < 2) return;
 
-const size_t *modelo_lineas(const modelo_t *m) { 
-    return m->lineas; 
-}
+    // Iteramos por los puntos del modelo dibujando líneas entre vértices consecutivos
+    for (size_t i = 0; i < m->cantidad_puntos - 1; i++) {
+        // Puntos originales locales del modelo
+        float x1 = m->puntos[i].x;
+        float y1 = m->puntos[i].y;
+        float x2 = m->puntos[i + 1].x;
+        float y2 = m->puntos[i + 1].y;
 
-size_t modelo_nlineas(const modelo_t *m) {
-    return m->nlineas;
-}
-
-modelo_t *modelo_buscar(lista_t *lista, const char *nombre) {
-    lista_iter_t *iter = lista_iter_crear(lista);
-    if (iter == NULL) return NULL;
-
-    modelo_t *encontrado = NULL;
-    while (!lista_iter_al_final(iter)) {
-        modelo_t *m = lista_iter_ver_actual(iter);
-        if (strcmp(m->nombre, nombre) == 0) {
-            encontrado = m;
-            break;
+        // Si hay una matriz de transformación válida (posición de la entidad en el mundo), la aplicamos
+        if (transformacion != NULL) {
+            matriz_aplicar(transformacion, &x1, &y1);
+            matriz_aplicar(transformacion, &x2, &y2);
         }
-        lista_iter_avanzar(iter);
+
+        // Dibujamos el segmento de recta transformado en la pantalla usando SDL2
+        SDL_RenderDrawLine(renderer, (int)x1, (int)y1, (int)x2, (int)y2);
     }
-    lista_iter_destruir(iter);
-    return encontrado;
 }

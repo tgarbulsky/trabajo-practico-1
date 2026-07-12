@@ -1,205 +1,269 @@
 #include "mundo.h"
+#include "lista.h"
+#include "tanque.h"
+#include "misil.h"
 #include "modelo.h"
+#include "stl.h"
 #include <stdlib.h>
 #include <math.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-#define NUM_OBSTACULOS 50
-#define LIMITE_MUNDO 150.0f
-#define RADIO_IMPACTO 3.0f          // radio de colisión de los misiles
-#define RADIO_DESPEJADO_ORIGEN 10.0f // zona sin obstáculos alrededor del jugador inicial
-#define DISTANCIA_ENEMIGO 50.0f
-#define VIDAS_INICIALES 4
-#define PUNTOS_POR_ENEMIGO 1000
-#define VELOCIDAD_TORRETA 0.5f      // rad/s con los que el enemigo apunta
-#define UMBRAL_PUNTERIA 0.1f        // rad: dispara si el jugador queda a menos de esto
-#define MAX_INTENTOS_SPAWN 1000
+#define MAX_ENEMIGOS 1
+#define DISTANCIA_RESPAWN 300.0f
+#define VELOCIDAD_TANQUE 120.0f
+#define VELOCIDAD_ROTACION 2.5f
 
 struct mundo {
     tanque_t *jugador;
-    tanque_t *enemigo;
-    obstaculo_t *obstaculos[NUM_OBSTACULOS];
-    size_t num_obstaculos;
-
-    int puntaje;
-    bool terminado;
-
-    // Eventos de un solo uso para las animaciones
-    bool ev_jugador_impactado;
-    bool ev_enemigo_destruido;
-    float ev_x, ev_y;
+    lista_t *enemigos;
+    lista_t *misiles;
+    
+    modelo_t *modelo_tanque;
+    modelo_t *modelo_misil;
 };
 
-static float normalizar_angulo(float a) {
-    while (a > (float)M_PI) a -= 2 * (float)M_PI;
-    while (a <= -(float)M_PI) a += 2 * (float)M_PI;
-    return a;
+static bool detectar_colision(float x1, float y1, float r1, float x2, float y2, float r2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float distancia_cuadrado = (dx * dx) + (dy * dy);
+    float radio_suma = r1 + r2;
+    return distancia_cuadrado <= (radio_suma * radio_suma);
 }
 
-static float angulo_aleatorio(void) {
-    return ((float)rand() / (float)RAND_MAX) * 2 * (float)M_PI - (float)M_PI;
+static void spawnear_enemigo_aleatorio(mundo_t *m) {
+    float px, py;
+    tanque_obtener_posicion(m->jugador, &px, &py);
+
+    float angulo_aleatorio = ((float)rand() / (float)RAND_MAX) * 2.0f * M_PI;
+    float ex = px + cosf(angulo_aleatorio) * DISTANCIA_RESPAWN;
+    float ey = py + sinf(angulo_aleatorio) * DISTANCIA_RESPAWN;
+
+    tanque_config_t config_e = {
+        .x = ex,
+        .y = ey,
+        .angulo = angulo_aleatorio + M_PI,
+        .velocidad = 60.0f, // Los enemigos se mueven un poco más lento
+        .vida_maxima = 50
+    };
+
+    tanque_t *nuevo_enemigo = tanque_crear(&config_e);
+    if (nuevo_enemigo) {
+        lista_insertar_ultimo(m->enemigos, nuevo_enemigo);
+    }
 }
 
-static float coordenada_aleatoria(void) {
-    return ((float)rand() / (float)RAND_MAX) * 2 * LIMITE_MUNDO - LIMITE_MUNDO;
-}
+mundo_t *mundo_crear(void) {
+    mundo_t *m = malloc(sizeof(mundo_t));
+    if (m == NULL) return NULL;
 
-static float distancia2(float x0, float y0, float x1, float y1) {
-    float dx = x1 - x0, dy = y1 - y0;
-    return dx * dx + dy * dy;
-}
+    m->modelo_tanque = stl_cargar_modelo("tanque.stl");
+    m->modelo_misil = stl_cargar_modelo("misil.stl");
 
-static bool posicion_choca_obstaculo(const mundo_t *m, float x, float y, float radio) {
-    for (size_t i = 0; i < m->num_obstaculos; i++) {
-        if (distancia2(x, y, obstaculo_x(m->obstaculos[i]),
-                       obstaculo_y(m->obstaculos[i])) < radio * radio)
-            return true;
-    }
-    return false;
-}
+    m->enemigos = lista_crear();
+    m->misiles = lista_crear();
 
-// Crea un enemigo a 50 metros del jugador en una dirección al azar,
-// reintentando hasta encontrar una posición libre de obstáculos.
-static tanque_t *spawn_enemigo(mundo_t *m) {
-    for (int i = 0; i < MAX_INTENTOS_SPAWN; i++) {
-        float ang = angulo_aleatorio();
-        float x = tanque_x(m->jugador) + DISTANCIA_ENEMIGO * cosf(ang);
-        float y = tanque_y(m->jugador) + DISTANCIA_ENEMIGO * sinf(ang);
-        tanque_t *e = crear_tanque_enemigo(x, y, angulo_aleatorio(), 1,
-                                           m->obstaculos, m->num_obstaculos);
-        if (e) return e;
-    }
-    return NULL;
-}
+    tanque_config_t config_p = { .x = 512.0f, .y = 384.0f, .angulo = 0.0f, .velocidad = 0.0f, .vida_maxima = 100 };
+    m->jugador = tanque_crear(&config_p);
 
-mundo_t *mundo_crear(lista_t *lista_modelos) {
-    mundo_t *m = calloc(1, sizeof(mundo_t));
-    if (!m) return NULL;
-
-    // Formas disponibles para los obstáculos
-    const char *nombres[] = {"CUBO1", "CUBO2", "CUBO3",
-                             "PIRAMIDE1", "PIRAMIDE2", "PIRAMIDE3"};
-    const modelo_t *formas[6];
-    size_t nformas = 0;
-    for (size_t i = 0; i < 6; i++) {
-        modelo_t *mod = modelo_buscar(lista_modelos, nombres[i]);
-        if (mod) formas[nformas++] = mod;
+    if (m->jugador) {
+        spawnear_enemigo_aleatorio(m);
     }
 
-    for (size_t i = 0; nformas > 0 && i < NUM_OBSTACULOS; i++) {
-        float x, y;
-        do {
-            x = coordenada_aleatoria();
-            y = coordenada_aleatoria();
-        } while (distancia2(x, y, 0, 0) <
-                 RADIO_DESPEJADO_ORIGEN * RADIO_DESPEJADO_ORIGEN);
-        obstaculo_t *o = obstaculo_crear(x, y, angulo_aleatorio(),
-                                         formas[rand() % nformas]);
-        if (o) m->obstaculos[m->num_obstaculos++] = o;
-    }
-
-    m->jugador = tanque_crear(0, 0, (float)M_PI / 2, VIDAS_INICIALES);
-    if (!m->jugador) {
-        mundo_destruir(m);
-        return NULL;
-    }
-    tanque_asignar_obstaculos(m->jugador, m->obstaculos, m->num_obstaculos);
-
-    m->enemigo = spawn_enemigo(m);
-    if (!m->enemigo) {
-        mundo_destruir(m);
-        return NULL;
-    }
     return m;
 }
 
 void mundo_destruir(mundo_t *m) {
-    if (!m) return;
+    if (m == NULL) return;
+
     tanque_destruir(m->jugador);
-    tanque_destruir(m->enemigo);
-    for (size_t i = 0; i < m->num_obstaculos; i++)
-        obstaculo_destruir(m->obstaculos[i]);
+    lista_destruir(m->enemigos, (void (*)(void *))tanque_destruir);
+    lista_destruir(m->misiles, (void (*)(void *))misil_destruir);
+
+    modelo_destruir(m->modelo_tanque);
+    modelo_destruir(m->modelo_misil);
+    
     free(m);
 }
 
+// Nueva función requerida para conectar el teclado del main sin variables globales
+void mundo_procesar_evento(mundo_t *m, const SDL_Event *event) {
+    if (m == NULL || event == NULL) return;
+
+    if (event->type == SDL_KEYDOWN) {
+        switch(event->key.keysym.sym) {
+            case SDLK_UP:
+                tanque_establecer_velocidad(m->jugador, VELOCIDAD_TANQUE);
+                break;
+            case SDLK_DOWN:
+                tanque_establecer_velocidad(m->jugador, -VELOCIDAD_TANQUE);
+                break;
+            case SDLK_RIGHT:
+                tanque_rotar(m->jugador, VELOCIDAD_ROTACION * 0.1f);
+                break;
+            case SDLK_LEFT:
+                tanque_rotar(m->jugador, -VELOCIDAD_ROTACION * 0.1f);
+                break;
+            case ' ':
+                mundo_jugador_disparar(m);
+                break;
+        }
+    } else if (event->type == SDL_KEYUP) {
+        // Al soltar las flechas detenemos el movimiento lineal
+        if (event->key.keysym.sym == SDLK_UP || event->key.keysym.sym == SDLK_DOWN) {
+            tanque_establecer_velocidad(m->jugador, 0.0f);
+        }
+    }
+}
+
 void mundo_actualizar(mundo_t *m, float dt) {
-    if (m->terminado) return;
+    if (m == NULL) return;
 
     tanque_actualizar(m->jugador, dt);
-    tanque_actualizar(m->enemigo, dt);
 
-    float px = tanque_x(m->jugador), py = tanque_y(m->jugador);
-    float ex = tanque_x(m->enemigo), ey = tanque_y(m->enemigo);
-
-    // Puntería del enemigo: gira la torreta hacia el jugador y dispara
-    // cuando la desviación es menor a 0.1 radianes
-    float objetivo = atan2f(py - ey, px - ex);
-    float error = normalizar_angulo(objetivo - tanque_phi(m->enemigo) -
-                                    tanque_torreta(m->enemigo));
-    float paso = VELOCIDAD_TORRETA * dt;
-    float giro = error;
-    if (giro > paso) giro = paso;
-    else if (giro < -paso) giro = -paso;
-    tanque_girar_torreta(m->enemigo, giro);
-
-    error = normalizar_angulo(objetivo - tanque_phi(m->enemigo) -
-                              tanque_torreta(m->enemigo));
-    if (fabsf(error) < UMBRAL_PUNTERIA && tanque_puede_disparar(m->enemigo))
-        tanque_disparar(m->enemigo);
-
-    // Misil del jugador: contra el enemigo o contra obstáculos
-    if (tanque_misil_activo(m->jugador)) {
-        float mx = tanque_misil_x(m->jugador), my = tanque_misil_y(m->jugador);
-        if (distancia2(mx, my, ex, ey) < RADIO_IMPACTO * RADIO_IMPACTO) {
-            tanque_misil_terminar(m->jugador);
-            m->puntaje += PUNTOS_POR_ENEMIGO;
-            m->ev_enemigo_destruido = true;
-            m->ev_x = ex;
-            m->ev_y = ey;
-            tanque_destruir(m->enemigo);
-            m->enemigo = spawn_enemigo(m);
-            if (!m->enemigo) m->terminado = true; // sin lugar donde aparecer
-        } else if (posicion_choca_obstaculo(m, mx, my, RADIO_IMPACTO)) {
-            tanque_misil_terminar(m->jugador);
-        }
+    if (lista_largo(m->enemigos) < MAX_ENEMIGOS) {
+        spawnear_enemigo_aleatorio(m);
     }
 
-    // Misil del enemigo: contra el jugador o contra obstáculos
-    if (m->enemigo && tanque_misil_activo(m->enemigo)) {
-        float mx = tanque_misil_x(m->enemigo), my = tanque_misil_y(m->enemigo);
-        if (distancia2(mx, my, px, py) < RADIO_IMPACTO * RADIO_IMPACTO) {
-            tanque_misil_terminar(m->enemigo);
-            tanque_recibir_impacto(m->jugador);
-            m->ev_jugador_impactado = true;
-            if (tanque_vidas(m->jugador) <= 0) m->terminado = true;
-        } else if (posicion_choca_obstaculo(m, mx, my, RADIO_IMPACTO)) {
-            tanque_misil_terminar(m->enemigo);
+    // Lógica interna de IA usando la interfaz pública de tanque
+    float px, py;
+    tanque_obtener_posicion(m->jugador, &px, &py);
+
+    lista_iter_t *iter_e = lista_iter_crear(m->enemigos);
+    while (!lista_iter_al_final(iter_e)) {
+        tanque_t *enemigo = lista_iter_ver_actual(iter_e);
+        
+        float ex, ey;
+        tanque_obtener_posicion(enemigo, &ex, &ey);
+        
+        // El enemigo rota apuntando lentamente en dirección al jugador
+        float angulo_hacia_jugador = atan2f(py - ey, px - ex);
+        float angulo_enemigo = tanque_obtener_angulo(enemigo);
+        float diff_angulo = angulo_hacia_jugador - angulo_enemigo;
+        
+        tanque_rotar(enemigo, diff_angulo * dt);
+        tanque_actualizar(enemigo, dt);
+        
+        // Disparos de la IA basados en una pequeña probabilidad aleatoria por cuadro
+        if ((rand() % 50) == 0) {
+            misil_config_t conf = {
+                .x = ex + cosf(angulo_enemigo) * 20.0f,
+                .y = ey + sinf(angulo_enemigo) * 20.0f,
+                .angulo = angulo_enemigo,
+                .velocidad = 200.0f,
+                .tiempo_vida = 3.0f,
+                .danio = 25
+            };
+            misil_t *nuevo = misil_crear(&conf);
+            if (nuevo) lista_insertar_ultimo(m->misiles, nuevo);
+        }
+        
+        lista_iter_avanzar(iter_e);
+    }
+    lista_iter_destruir(iter_e);
+
+    // Actualizar misiles
+    lista_iter_t *iter_misil = lista_iter_crear(m->misiles);
+    while (!lista_iter_al_final(iter_misil)) {
+        misil_t *misil = lista_iter_ver_actual(iter_misil);
+        if (misil_actualizar(misil, dt)) {
+            misil_destruir(lista_iter_borrar(iter_misil));
+        } else {
+            lista_iter_avanzar(iter_misil);
         }
     }
+    lista_iter_destruir(iter_misil);
+
+    // Detección de colisiones corregida sin avances dobles
+    iter_misil = lista_iter_crear(m->misiles);
+    while (!lista_iter_al_final(iter_misil)) {
+        misil_t *misil = lista_iter_ver_actual(iter_misil);
+        float mx, my;
+        misil_obtener_posicion(misil, &mx, &my);
+        bool misil_borrado = false;
+
+        // Caso A: Misil impacta en un enemigo
+        lista_iter_t *iter_enemigo = lista_iter_crear(m->enemigos);
+        while (!lista_iter_al_final(iter_enemigo)) {
+            tanque_t *enemigo = lista_iter_ver_actual(iter_enemigo);
+            float ex, ey;
+            tanque_obtener_posicion(enemigo, &ex, &ey);
+
+            if (detectar_colision(mx, my, 4.0f, ex, ey, 15.0f)) {
+                if (tanque_recibir_danio(enemigo, misil_obtener_danio(misil))) {
+                    tanque_destruir(lista_iter_borrar(iter_enemigo));
+                } else {
+                    lista_iter_avanzar(iter_enemigo);
+                }
+                misil_borrado = true;
+                break; 
+            } else {
+                lista_iter_avanzar(iter_enemigo);
+            }
+        }
+        lista_iter_destruir(iter_enemigo);
+
+        // Caso B: Misil impacta en el propio jugador
+        if (!misil_borrado && detectar_colision(mx, my, 4.0f, px, py, 15.0f)) {
+            tanque_recibir_danio(m->jugador, misil_obtener_danio(misil));
+            misil_borrado = true;
+        }
+
+        if (misil_borrado) {
+            misil_destruir(lista_iter_borrar(iter_misil));
+        } else {
+            lista_iter_avanzar(iter_misil);
+        }
+    }
+    lista_iter_destruir(iter_misil);
 }
 
-tanque_t *mundo_jugador(const mundo_t *m) { return m->jugador; }
-tanque_t *mundo_enemigo(const mundo_t *m) { return m->enemigo; }
-size_t mundo_num_obstaculos(const mundo_t *m) { return m->num_obstaculos; }
-obstaculo_t *mundo_obstaculo(const mundo_t *m, size_t i) { return m->obstaculos[i]; }
+void  mundo_dibujar(mundo_t *m, SDL_Renderer *renderer) {
+    if (m == NULL || renderer == NULL) return;
 
-int mundo_puntaje(const mundo_t *m) { return m->puntaje; }
-int mundo_vidas(const mundo_t *m) { return tanque_vidas(m->jugador); }
-bool mundo_terminado(const mundo_t *m) { return m->terminado; }
+    if (tanque_esta_vivo(m->jugador)) {
+        matriz_t *t_jugador = tanque_obtener_matriz_transformacion(m->jugador);
+        modelo_dibujar(m->modelo_tanque, t_jugador, renderer);
+        matriz_destruir(t_jugador);
+    }
 
-bool mundo_evento_jugador_impactado(mundo_t *m) {
-    bool e = m->ev_jugador_impactado;
-    m->ev_jugador_impactado = false;
-    return e;
+    lista_iter_t *iter_e = lista_iter_crear(m->enemigos);
+    while (!lista_iter_al_final(iter_e)) {
+        tanque_t *enemigo = lista_iter_ver_actual(iter_e);
+        matriz_t *t_enemigo = tanque_obtener_matriz_transformacion(enemigo);
+        modelo_dibujar(m->modelo_tanque, t_enemigo, renderer);
+        matriz_destruir(t_enemigo);
+        lista_iter_avanzar(iter_e);
+    }
+    lista_iter_destruir(iter_e);
+
+    lista_iter_t *iter_m = lista_iter_crear(m->misiles);
+    while (!lista_iter_al_final(iter_m)) {
+        misil_t *misil = lista_iter_ver_actual(iter_m);
+        matriz_t *t_misil = misil_obtener_matriz_transformacion(misil);
+        modelo_dibujar(m->modelo_misil, t_misil, renderer);
+        matriz_destruir(t_misil);
+        lista_iter_avanzar(iter_m);
+    }
+    lista_iter_destruir(iter_m);
 }
 
-bool mundo_evento_enemigo_destruido(mundo_t *m, float *x, float *y) {
-    if (!m->ev_enemigo_destruido) return false;
-    m->ev_enemigo_destruido = false;
-    *x = m->ev_x;
-    *y = m->ev_y;
-    return true;
+void mundo_jugador_disparar(mundo_t *m) {
+    if (m == NULL || !tanque_esta_vivo(m->jugador)) return;
+
+    float px, py;
+    tanque_obtener_posicion(m->jugador, &px, &py);
+    float angulo = tanque_obtener_angulo(m->jugador);
+
+    misil_config_t conf = {
+        .x = px + cosf(angulo) * 20.0f,
+        .y = py + sinf(angulo) * 20.0f,
+        .angulo = angulo,
+        .velocidad = 250.0f,
+        .tiempo_vida = 3.0f,
+        .danio = 50
+    };
+
+    misil_t *nuevo = misil_crear(&conf);
+    if (nuevo) {
+        lista_insertar_ultimo(m->misiles, nuevo);
+    }
 }

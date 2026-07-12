@@ -1,50 +1,33 @@
 #include "obstaculo.h"
 #include <stdlib.h>
+#include <math.h>
 
-struct obstaculo {
-    float x;
-    float y;
-    float phi;
-    const modelo_t *modelo;
-};
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
 
-obstaculo_t *obstaculo_crear(float x, float y, float phi, const modelo_t *modelo) {
-    obstaculo_t *o = malloc(sizeof(obstaculo_t));
-    if (o == NULL) {
-        return NULL;
-    }
-    
-    o->x = x;
-    o->y = y;
-    o->phi = phi;
-    o->modelo = modelo;
-    
-    return o;
+// Funciones internas de aleatoriedad para que este archivo sea 100% independiente
+static float rand_float(float min, float max) {
+    return min + ((float)rand() / (float)RAND_MAX) * (max - min);
 }
 
-void obstaculo_destruir(obstaculo_t *o) {
-    if (o != NULL) {
-        free(o);
-    }
+static int rand_int(int min, int max) {
+    return min + rand() % (max - min + 1);
 }
 
-// Getters protegidos contra punteros NULL
-float obstaculo_x(const obstaculo_t *o) { 
-    if (o == NULL) return 0.0f;
-    return o->x; 
+obstaculo_t* obstaculo_crear(void) {
+    obstaculo_t* obs = malloc(sizeof(obstaculo_t));
+    if (obs == NULL) return NULL;
+
+    obs->tipo = (tipo_obstaculo_t)rand_int(CUBO1, PIRAMIDE3);
+    obs->pos[0] = rand_float(-150.0f, 150.0f);
+    obs->pos[1] = rand_float(-150.0f, 150.0f);
+    obs->pos[2] = 0.0f;
+    obs->angz = rand_float(-M_PI, M_PI);
+
+    return obs;
 }
 
-float obstaculo_y(const obstaculo_t *o) { 
-    if (o == NULL) return 0.0f;
-    return o->y; 
-}
-
-float obstaculo_phi(const obstaculo_t *o) { 
-    if (o == NULL) return 0.0f;
-    return o->phi; 
-}
-
-const modelo_t *obstaculo_modelo(const obstaculo_t *o) { 
-    if (o == NULL) return NULL;
-    return o->modelo; 
+void obstaculo_destruir(obstaculo_t* obs) {
+    free(obs);
 }

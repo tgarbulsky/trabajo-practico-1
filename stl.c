@@ -1,126 +1,86 @@
-#include "stl.h"
+##include "stl.h"
 #include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-const char *unidades_nombre[] = {
-    [MM]   = "mm",
-    [CM]   = "cm",
-    [M]    = "m",
-    [IN]   = "pulgadas",
-    [FT]   = "pies",
-    [MILS] = "milis"
-};
+// --- FUNCIONES DE LA CÁTEDRA PARA DESEMPAQUETADO DE BYTES ---
 
-bool leer_int16_little_endian(FILE *f, int16_t *v) { 
-    uint8_t bytes[2];
-    if (fread(bytes, 1, 2, f) != 2) {
-        return false; 
+static uint16_t leer_uint16_le(const uint8_t *bytes) {
+    return (uint16_t)(bytes[0] | (bytes[1] << 8));
+}
+
+static uint32_t leer_uint32_le(const uint8_t *bytes) {
+    return (uint32_t)(bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
+}
+
+static float leer_float_le(const uint8_t *bytes) {
+    uint32_t bits = leer_uint32_le(bytes);
+    return *(float *)&bits;
+}
+
+// --- ESTRUCTURA BINARIA DEL ARCHIVO STL ---
+
+typedef struct {
+    uint8_t normal[12];   
+    uint8_t v1[12];       
+    uint8_t v2[12];       
+    uint8_t v3[12];       
+    uint8_t atributo[2];  
+} registro_triangulo_t;
+
+modelo_t *stl_cargar_modelo(const char *ruta_archivo) {
+    if (ruta_archivo == NULL) return NULL;
+
+    FILE *f = fopen(ruta_archivo, "rb");
+    if (f == NULL) return NULL;
+
+    char cabecera[80];
+    if (fread(cabecera, sizeof(char), 80, f) != 80) {
+        fclose(f);
+        return NULL;
     }
-    *v = (bytes[0] | (bytes[1] << 8));
-    return true;
-}
 
-bool leer_int32_little_endian(FILE *f, int32_t *v) {  
-    uint8_t bytes[4];
-    if (fread(bytes, 1, 4, f) != 4) {
-        return false; 
+    uint8_t bytes_cantidad[4];
+    if (fread(bytes_cantidad, 1, 4, f) != 4) {
+        fclose(f);
+        return NULL;
     }
-    *v = (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
-    return true; 
-}
+    uint32_t cantidad_triangulos = leer_uint32_le(bytes_cantidad);
 
-bool leer_float_little_endian(FILE *f, float *v)   { 
-    int32_t aux_int;
-    if (!leer_int32_little_endian(f, &aux_int)) {
-        return false;
+    if (cantidad_triangulos == 0) {
+        fclose(f);
+        return NULL;
     }
-    memcpy(v, &aux_int, sizeof(float));
-    return true; 
-}
 
-bool leer_encabezado_stl(FILE *f){     
-    char tipo[3];
-    int16_t reservado1, reservado2, version;
-    int32_t offset;
+    size_t puntos_totales = cantidad_triangulos * 4;
+    modelo_t *m = modelo_crear(puntos_totales);
+    if (m == NULL) {
+        fclose(f);
+        return NULL;
+    }
 
-    if (fread(tipo, 1, 3, f) != 3) return false;
-    if (memcmp(tipo, "STL", 3) != 0) return false;  
+    registro_triangulo_t reg;
+    size_t indice_punto = 0;
 
-    if (!leer_int16_little_endian(f, &reservado1)) return false;
-    if (!leer_int16_little_endian(f, &reservado2)) return false;
-    if (!leer_int16_little_endian(f, &version)) return false;
-    if (version != 3) return false;  
-
-    if (!leer_int32_little_endian(f, &offset)) return false;
-    if (offset != 25) return false;  
-
-    return true; 
-}
-
-bool leer_formato_STL(FILE *f, unidades_t *unidades, size_t *maxlong) {     
-    int32_t tamanio;
-    int16_t unid, dimensiones, tipo_coord, max_long;
-
-    if (!leer_int32_little_endian(f, &tamanio)) return false;
-    if (tamanio != 12) return false;
-
-    if (!leer_int16_little_endian(f, &unid)) return false;
-    if (!leer_int16_little_endian(f, &dimensiones)) return false;
-    if (dimensiones != 3) return false;
-    if (!leer_int16_little_endian(f, &tipo_coord)) return false;
-    if (tipo_coord != 0) return false;
-    if (!leer_int16_little_endian(f, &max_long)) return false;
-
-    *unidades = unid;
-    *maxlong = max_long;
-    return true; 
-}
-
-bool leer_modelo_3d(FILE *f, size_t maxlong, char *etiqueta, size_t *ncoords, float **coords, size_t *nlineas, size_t **lineas){
-    if (fread(etiqueta, 1, maxlong, f) != maxlong) return false;
-    etiqueta[maxlong] = '\0'; 
-
-    int32_t aux_ncoords;
-    if (!leer_int32_little_endian(f, &aux_ncoords)) return false;
-    if (aux_ncoords < 0) return false;
-    *ncoords = aux_ncoords;
-
-    *coords = malloc(sizeof(float) * 3 * (*ncoords));
-    if (*coords == NULL) return false;
-
-    for (size_t i = 0; i < (*ncoords) * 3; i++) {
-        if (!leer_float_little_endian(f, &((*coords)[i]))) {
-            free(*coords);
-            return false;
+    for (uint32_t i = 0; i < cantidad_triangulos; i++) {
+        if (fread(&reg, sizeof(registro_triangulo_t), 1, f) != 1) {
+            modelo_destruir(m);
+            fclose(f);
+            return NULL;
         }
+
+        float v1_x = leer_float_le(&reg.v1[0]);
+        float v1_y = leer_float_le(&reg.v1[4]);
+        float v2_x = leer_float_le(&reg.v2[0]);
+        float v2_y = leer_float_le(&reg.v2[4]);
+        float v3_x = leer_float_le(&reg.v3[0]);
+        float v3_y = leer_float_le(&reg.v3[4]);
+
+        modelo_establecer_punto(m, indice_punto++, v1_x, v1_y);
+        modelo_establecer_punto(m, indice_punto++, v2_x, v2_y);
+        modelo_establecer_punto(m, indice_punto++, v3_x, v3_y);
+        modelo_establecer_punto(m, indice_punto++, v1_x, v1_y);
     }
 
-    int32_t aux_nlineas;
-    if (!leer_int32_little_endian(f, &aux_nlineas)) {
-        free(*coords);
-        return false;
-    }
-    if (aux_nlineas < 0) {
-        free(*coords);
-        return false;
-    }
-    *nlineas = aux_nlineas;
-
-    *lineas = malloc(sizeof(size_t) * 2 * (*nlineas));
-    if (*lineas == NULL) {
-        free(*coords);
-        return false;
-    }
-
-    for (size_t i = 0; i < (*nlineas) * 2; i++) {
-        int32_t temp;
-        if (!leer_int32_little_endian(f, &temp) || temp < 0) {
-            free(*coords);
-            free(*lineas);
-            return false;
-        }
-        (*lineas)[i] = (size_t)temp;
-    }
-
-    return true; 
+    fclose(f);
+    return m;
 }

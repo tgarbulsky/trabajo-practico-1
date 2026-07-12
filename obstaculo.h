@@ -1,18 +1,25 @@
 #ifndef OBSTACULO_H
 #define OBSTACULO_H
 
-#include "modelo.h" // Aporta modelo_t (redefinir el typedef acá rompe en C99)
+// Tipos de bloques que se pueden renderizar en el mapa (tu propia lista)
+typedef enum {
+    CUBO1, 
+    CUBO2, 
+    CUBO3, 
+    PIRAMIDE1, 
+    PIRAMIDE2, 
+    PIRAMIDE3
+} tipo_obstaculo_t;
 
-typedef struct obstaculo obstaculo_t;
+// Estructura limpia para tus obstáculos
+typedef struct obstaculo {
+    tipo_obstaculo_t tipo;
+    float pos[3];
+    float angz;
+} obstaculo_t;
 
-// Constructor y Destructor
-obstaculo_t *obstaculo_crear(float x, float y, float phi, const modelo_t *modelo);
-void         obstaculo_destruir(obstaculo_t *o);
+// Funciones para tus obstáculos
+obstaculo_t* obstaculo_crear(void);
+void obstaculo_destruir(obstaculo_t* obs);
 
-// Getters públicos
-float           obstaculo_x(const obstaculo_t *o);
-float           obstaculo_y(const obstaculo_t *o);
-float           obstaculo_phi(const obstaculo_t *o);
-const modelo_t *obstaculo_modelo(const obstaculo_t *o);
-
-#endif
+#endif // OBSTACULO_H
