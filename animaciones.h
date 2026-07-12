@@ -34,7 +34,7 @@ animacion_enemigo_t *animacion_enemigo_crear(const modelo_t *mod, float x, float
 bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt);
 
 // Proyecta en perspectiva 3D y dibuja cada fragmento rotando independientemente.
-void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const float matriz_vista[4][4], int width, int height);
+void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height);
 
 // Libera la memoria del TDA del enemigo destruido.
 void animacion_enemigo_destruir(animacion_enemigo_t *a);

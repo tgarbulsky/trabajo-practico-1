@@ -25,7 +25,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Funciones auxiliares del alumno para no ensuciar el flujo principal
+// Funciones auxiliares para dibujo 2D/3D acopladas a tus TDA nativos
 static void mi_dibujar_modelo_2d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float escala) {
     if (!mod) return;
     const float *coords = modelo_coordenadas(mod);
@@ -50,36 +50,56 @@ static void mi_dibujar_texto_hud(SDL_Renderer *renderer, lista_t *lista, const c
     }
 }
 
-static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const float mv[4][4]) {
-    if (!mod) return;
+static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista) {
+    if (!mod || !matriz_vista) return;
+
+    size_t nvertices = modelo_ncoordenadas(mod);
     const float *coords = modelo_coordenadas(mod);
     const size_t *lineas = modelo_lineas(mod);
     size_t nlineas = modelo_nlineas(mod);
+
+    // Creamos la matriz dinámica de puntos locales usando tu constructor
+    matriz_t *puntos_locales = _matriz_crear(nvertices, 3);
+    if (!puntos_locales) return;
+
     float c = cosf(phi + rot_add), s = sinf(phi + rot_add);
+    for (size_t i = 0; i < nvertices; i++) {
+        float wx = coords[i * 3] * c - coords[i * 3 + 1] * s + x;
+        float wy = coords[i * 3] * s + coords[i * 3 + 1] * c + y;
+        float wz = coords[i * 3 + 2];
+        matriz_establecer(puntos_locales, i, 0, wx);
+        matriz_establecer(puntos_locales, i, 1, wy);
+        matriz_establecer(puntos_locales, i, 2, wz);
+    }
+
+    // Aplicamos tu proyección homogénea
+    matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
+    matriz_destruir(puntos_locales);
+    if (!puntos_proyectados) return;
 
     for (size_t i = 0; i < nlineas; i++) {
-        size_t i1 = lineas[i * 2], i2 = lineas[i * 2 + 1];
-        float wx1 = coords[i1 * 3] * c - coords[i1 * 3 + 1] * s + x;
-        float wy1 = coords[i1 * 3] * s + coords[i1 * 3 + 1] * c + y;
-        float wz1 = coords[i1 * 3 + 2];
-        float wx2 = coords[i2 * 3] * c - coords[i2 * 3 + 1] * s + x;
-        float wy2 = coords[i2 * 3] * s + coords[i2 * 3 + 1] * c + y;
-        float wz2 = coords[i2 * 3 + 2];
+        size_t i1 = lineas[i * 2];
+        size_t i2 = lineas[i * 2 + 1];
 
-        float vx1 = wx1 * mv[0][0] + wy1 * mv[0][1] + wz1 * mv[0][2] + mv[0][3];
-        float vy1 = wx1 * mv[1][0] + wy1 * mv[1][1] + wz1 * mv[1][2] + mv[1][3];
-        float vz1 = wx1 * mv[2][0] + wy1 * mv[2][1] + wz1 * mv[2][2] + mv[2][3];
-        float vx2 = wx2 * mv[0][0] + wy2 * mv[0][1] + wz2 * mv[0][2] + mv[0][3];
-        float vy2 = wx2 * mv[1][0] + wy2 * mv[1][1] + wz2 * mv[1][2] + mv[1][3];
-        float vz2 = wx2 * mv[2][0] + wy2 * mv[2][1] + wz2 * mv[2][2] + mv[2][3];
+        // Filtro de clipping homogéneo según la columna 2 (w) de tu TDA
+        float w1 = matriz_obtener(puntos_proyectados, i1, 2);
+        float w2 = matriz_obtener(puntos_proyectados, i2, 2);
+        if (w1 < 1.0f || w2 < 1.0f) continue;
 
-        if (vz1 <= 0.2f || vz2 <= 0.2f) continue;
-        int px1 = (int)((vx1 / vz1) * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
-        int py1 = (int)(VENTANA_ALTO / 2 - (vy1 / vz1) * (VENTANA_ALTO / 2));
-        int px2 = (int)((vx2 / vz2) * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
-        int py2 = (int)(VENTANA_ALTO / 2 - (vy2 / vz2) * (VENTANA_ALTO / 2));
+        float x1_h = matriz_obtener(puntos_proyectados, i1, 0);
+        float y1_h = matriz_obtener(puntos_proyectados, i1, 1);
+        float x2_h = matriz_obtener(puntos_proyectados, i2, 0);
+        float y2_h = matriz_obtener(puntos_proyectados, i2, 1);
+
+        int px1 = (int)(x1_h * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
+        int py1 = (int)(VENTANA_ALTO / 2 - y1_h * (VENTANA_ALTO / 2));
+        int px2 = (int)(x2_h * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
+        int py2 = (int)(VENTANA_ALTO / 2 - y2_h * (VENTANA_ALTO / 2));
+
         SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
     }
+
+    matriz_destruir(puntos_proyectados);
 }
 // END código del alumno
 
@@ -122,7 +142,7 @@ int main(int argc, char *argv[]) {
     mundo_t *mundo = mundo_crear(lista_modelos);
     lista_t *an_enemigos = lista_crear();
     animacion_cristales_t *cristales = NULL;
-    float dt = 1.0f / JUEGO_FPS; // Al ser FPS fijos, el delta de simulación es constante
+    float dt = 1.0f / JUEGO_FPS;
     // END código del alumno
 
     unsigned int ticks = SDL_GetTicks();
@@ -152,7 +172,7 @@ int main(int argc, char *argv[]) {
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
         // BEGIN código del alumno
-        // 1. Actualización lógica fija por cuadro
+        // 1. Lógica interna
         mundo_actualizar(mundo, dt);
 
         if (mundo_evento_jugador_impactado(mundo)) {
@@ -180,45 +200,58 @@ int main(int argc, char *argv[]) {
         }
         lista_iter_destruir(it);
 
-        // 2. Renderizado 3D
+        // 2. Renderizado 3D (Cámara construida con tus funciones de matriz.h)
         tanque_t *jugador = mundo_jugador(mundo);
         float jx = tanque_x(jugador), jy = tanque_y(jugador), jphi = tanque_phi(jugador);
-        float mv[4][4];
-        matriz_computar_afinidad_camara(jx, jy, jphi, mv);
+
+        float v_traslacion[3] = {-jx, -jy, 0.0f};
+        matriz_t *m_trans = matriz_crear_mt(v_traslacion);
+        matriz_t *m_rot = matriz_crear_mz(-jphi - M_PI / 2.0f);
+        matriz_t *m_per = matriz_crear_mper(4);
+
+        matriz_t *m_rot_trans = matriz_multiplicar(m_rot, m_trans);
+        matriz_t *matriz_camara_completa = matriz_multiplicar(m_per, m_rot_trans);
+
+        matriz_destruir(m_trans);
+        matriz_destruir(m_rot);
+        matriz_destruir(m_per);
+        matriz_destruir(m_rot_trans);
 
         SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255);
         const modelo_t *mt = modelo_buscar(lista_modelos, "MONTAÑAS");
         if (!mt) mt = modelo_buscar(lista_modelos, "MONTANIAS");
-        if (mt) mi_dibujar_modelo_3d(renderer, mt, jx, jy, 0, 0, mv);
+        if (mt) mi_dibujar_modelo_3d(renderer, mt, jx, jy, 0, 0, matriz_camara_completa);
 
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         size_t nobst = mundo_num_obstaculos(mundo);
         for (size_t i = 0; i < nobst; i++) {
             obstaculo_t *o = mundo_obstaculo(mundo, i);
-            mi_dibujar_modelo_3d(renderer,  obstaculo_modelo(o), obstaculo_x(o), obstaculo_y(o),  obstaculo_phi(o), 0, mv);
+            mi_dibujar_modelo_3d(renderer, obstaculo_modelo(o), obstaculo_x(o), obstaculo_y(o), obstaculo_phi(o), 0, matriz_camara_completa);
         }
         tanque_t *enemigo = mundo_enemigo(mundo);
         if (enemigo) {
             const modelo_t *me = modelo_buscar(lista_modelos, "ENEMIGO");
             if (!me) me = modelo_buscar(lista_modelos, "TANQUE");
-            mi_dibujar_modelo_3d(renderer, me, tanque_x(enemigo), tanque_y(enemigo), tanque_phi(enemigo), tanque_torreta(enemigo), mv);
+            mi_dibujar_modelo_3d(renderer, me, tanque_x(enemigo), tanque_y(enemigo), tanque_phi(enemigo), tanque_torreta(enemigo), matriz_camara_completa);
             if (tanque_misil_activo(enemigo)) {
                 const modelo_t *mm = modelo_buscar(lista_modelos, "MISIL");
-                if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(enemigo), tanque_misil_y(enemigo), tanque_misil_phi(enemigo), 0, mv);
+                if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(enemigo), tanque_misil_y(enemigo), tanque_misil_phi(enemigo), 0, matriz_camara_completa);
             }
         }
         if (tanque_misil_activo(jugador)) {
             const modelo_t *mm = modelo_buscar(lista_modelos, "MISIL");
-            if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(jugador), tanque_misil_y(jugador), tanque_misil_phi(jugador), 0, mv);
+            if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(jugador), tanque_misil_y(jugador), tanque_misil_phi(jugador), 0, matriz_camara_completa);
         }
         it = lista_iter_crear(an_enemigos);
         while (!lista_iter_al_final(it)) {
-            animacion_enemigo_dibujar(lista_iter_ver_actual(it), renderer, mv, VENTANA_ANCHO, VENTANA_ALTO);
+            animacion_enemigo_dibujar(lista_iter_ver_actual(it), renderer, matriz_camara_completa, VENTANA_ANCHO, VENTANA_ALTO);
             lista_iter_avanzar(it);
         }
         lista_iter_destruir(it);
 
-        // 3. Renderizado del HUD 2D
+        matriz_destruir(matriz_camara_completa);
+
+        // 3. Renderizado HUD 2D
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
         char str_pts[32]; sprintf(str_pts, "%06d", mundo_puntaje(mundo));
         mi_dibujar_texto_hud(renderer, lista_modelos, str_pts, 40.0f, 50.0f, 1.2f);
