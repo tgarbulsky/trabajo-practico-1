@@ -458,10 +458,15 @@ int main(int argc, char *argv[]) {
                     float x0, y0, x1, y1;
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
                     
-                    // Probamos renderizar cada segmento activo en su posición de inicio (x0, y0)
-                    // con escala 1.0f y sin rotación adicional, dejando que la matriz ident
-                    // del stack lo ubique en el espacio normalizado.
-                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 1.0f, 0.0f);
+                    // Calculamos cuánto mide y hacia dónde va en cada eje
+                    float dx = x1 - x0;
+                    float dy = y1 - y0;
+                    
+                    // Si el modelo "#" es una línea diagonal base que mide 1 en X y 1 en Y,
+                    // pasarle dx como "escala" y dejar la rotación en 0 debería estirar
+                    // e inclinar dinámicamente cada segmento desde su origen (x0, y0).
+                    // En algunas cátedras, el parámetro de escala actúa directo en la matriz de transformación.
+                    render_modelo(renderer, stack, modelo_cristal, x0, y0, dx, dy);
                 }
             }
         }
