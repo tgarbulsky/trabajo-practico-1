@@ -173,51 +173,59 @@ bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
 void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
     if (!a || !matriz_vista) return;
 
-    // Iteramos por cada una de las piezas en las que se desarmó el tanque enemigo
-    for (size_t i = 0; i < a->cant_piezas; i++) {
-        const pieza_t *p = &a->piezas[i];
-        size_t nvertices = p->nvertices;
+    // Iteramos por cada una de las aristas individuales (fragmentos) en las que explotó el tanque
+    for (size_t i = 0; i < a->cant; i++) {
+        const fragmento_t *f = &a->fragmentos[i];
 
-        // 1. Creamos la matriz dinámica de puntos en espacio local/mundo usando tu constructor
-        matriz_t *puntos_locales = _matriz_crear(nvertices, 3);
+        // Cada fragmento es una línea suelta, por lo tanto usamos exactamente 2 vértices
+        matriz_t *puntos_locales = _matriz_crear(2, 3);
         if (!puntos_locales) continue;
 
-        // Calculamos rotación intrínseca de la pieza rota
-        float c = cosf(p->angulo_rot), s = sinf(p->angulo_rot);
+        // Calculamos el seno y coseno del ángulo de rotación propia del fragmento
+        float c = cosf(f->rot_intrinseca), s = sinf(f->rot_intrinseca);
 
-        for (size_t v = 0; v < nvertices; v++) {
-            // Rotación local del fragmento sobre su propio centro + traslación por su física de expansión
-            float rx = p->vertices_originales[v * 3] * c - p->vertices_originales[v * 3 + 1] * s;
-            float ry = p->vertices_originales[v * 3] * s + p->vertices_originales[v * 3 + 1] * c;
+        // --- VÉRTICE 1 ---
+        // 1. Conseguimos el vector relativo a su propio baricentro (su centro de masa)
+        float rx1 = f->x1 - f->bx;
+        float ry1 = f->y1 - f->by;
 
-            float wx = rx + p->x;
-            float wy = ry + p->y;
-            float wz = p->vertices_originales[v * 3 + 2] + p->z; // Incorporamos gravedad acumulada en Z
+        // 2. Rotamos intrínsecamente en el plano XY alrededor de su propio eje
+        float rot_x1 = rx1 * c - ry1 * s;
+        float rot_y1 = rx1 * s + ry1 * c;
 
-            matriz_establecer(puntos_locales, v, 0, wx);
-            matriz_establecer(puntos_locales, v, 1, wy);
-            matriz_establecer(puntos_locales, v, 2, wz);
-        }
+        // 3. Sumamos el baricentro dinámico desplazado y la posición original del tanque en el mundo
+        matriz_establecer(puntos_locales, 0, 0, rot_x1 + f->bx + a->orig_x);
+        matriz_establecer(puntos_locales, 0, 1, rot_y1 + f->by + a->orig_y);
+        matriz_establecer(puntos_locales, 0, 2, f->z1 + f->bz);
 
-        // 2. Proyectamos usando el pipeline homogéneo de tu TDA Matriz
+        // --- VÉRTICE 2 ---
+        // 1. Conseguimos el vector relativo al baricentro
+        float rx2 = f->x2 - f->bx;
+        float ry2 = f->y2 - f->by;
+
+        // 2. Rotamos intrínsecamente
+        float rot_x2 = rx2 * c - ry2 * s;
+        float rot_y2 = rx2 * s + ry2 * c;
+
+        // 3. Trasladamos al espacio del mundo sumando el baricentro y la base
+        matriz_establecer(puntos_locales, 1, 0, rot_x2 + f->bx + a->orig_x);
+        matriz_establecer(puntos_locales, 1, 1, rot_y2 + f->by + a->orig_y);
+        matriz_establecer(puntos_locales, 1, 2, f->z2 + f->bz);
+
+        // Proyectamos el fragmento usando el pipeline de tu matriz_t
         matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
         matriz_destruir(puntos_locales);
         if (!puntos_proyectados) continue;
 
-        // 3. Dibujamos las aristas que componen esta pieza
-        for (size_t j = 0; j < p->nlineas; j++) {
-            size_t i1 = p->lineas[j * 2];
-            size_t i2 = p->lineas[j * 2 + 1];
+        // Filtro de clipping usando la columna de profundidad (w) de tu TDA
+        float w1 = matriz_obtener(puntos_proyectados, 0, 2);
+        float w2 = matriz_obtener(puntos_proyectados, 1, 2);
 
-            // Filtro de clipping homogéneo según la columna de profundidad (w) de tu TDA
-            float w1 = matriz_obtener(puntos_proyectados, i1, 2);
-            float w2 = matriz_obtener(puntos_proyectados, i2, 2);
-            if (w1 < 1.0f || w2 < 1.0f) continue;
-
-            float x1_h = matriz_obtener(puntos_proyectados, i1, 0);
-            float y1_h = matriz_obtener(puntos_proyectados, i1, 1);
-            float x2_h = matriz_obtener(puntos_proyectados, i2, 0);
-            float y2_h = matriz_obtener(puntos_proyectados, i2, 1);
+        if (w1 >= 1.0f && w2 >= 1.0f) {
+            float x1_h = matriz_obtener(puntos_proyectados, 0, 0);
+            float y1_h = matriz_obtener(puntos_proyectados, 0, 1);
+            float x2_h = matriz_obtener(puntos_proyectados, 1, 0);
+            float y2_h = matriz_obtener(puntos_proyectados, 1, 1);
 
             int px1 = (int)(x1_h * (width / 2) + (width / 2));
             int py1 = (int)(height / 2 - y1_h * (height / 2));
