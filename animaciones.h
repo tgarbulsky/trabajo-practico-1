@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <SDL2/SDL.h>
+#include "lista.h"
 
 #define CRISTAL_LINEAS 27
 #define EXPLOSION_PIEZAS 6
@@ -46,5 +48,13 @@ void animacion_cristal_linea(const animacion_t *a, size_t i,
 const char *animacion_pieza_modelo(const animacion_t *a, size_t i);
 bool animacion_pieza_posicion(const animacion_t *a, size_t i,
                               float *x, float *y, float *z, float *rot);
+
+// ============================================================================
+// NUEVAS FUNCIONES: RENDERIZADO MATRICIAL DIRECTO 2D (HUD / TEXTOS / CRISTAL)
+// ============================================================================
+void dibujar_linea_2d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer);
+bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
+bool imprimir_cadena_2d(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
+bool renderizar_cristal_2d(animacion_t *a, float escala, lista_t *modelos, SDL_Renderer *renderer);
 
 #endif // ANIMACIONES_H

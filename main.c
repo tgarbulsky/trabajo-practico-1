@@ -448,82 +448,21 @@ int main(int argc, char *argv[]) {
 // 5. Vidrio roto animado en 2D encima de todo
         // //beggin codigo alumno
         if (animacion_activa(anim_cristal)) {
-            const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
-            if (modelo_cristal != NULL) {
-                SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
-
-                size_t visibles = animacion_cristal_visibles(anim_cristal);
-                
-                for (size_t i = 0; i < visibles; i++) {
-                    float x0, y0, x1, y1;
-                    animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
-                    
-                    // Calculamos cuánto mide y hacia dónde va en cada eje
-                    float dx = x1 - x0;
-                    float dy = y1 - y0;
-                    
-                    // Si el modelo "#" es una línea diagonal base que mide 1 en X y 1 en Y,
-                    // pasarle dx como "escala" y dejar la rotación en 0 debería estirar
-                    // e inclinar dinámicamente cada segmento desde su origen (x0, y0).
-                    // En algunas cátedras, el parámetro de escala actúa directo en la matriz de transformación.
-                    render_modelo(renderer, stack, modelo_cristal, x0, y0, dx, dy);
-                }
-            }
+            // Pasamos a dibujar el cristal usando coordenadas matriciales directas 2D centradas
+            renderizar_cristal_2d(anim_cristal, 350.0f, lista_modelos, renderer);
         }
+
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
             if (tiempo_fin > 1.5f) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color Rojo porque pocho lo pidió
-
-                //Letra G
-            SDL_RenderDrawLine(renderer, 320, 220, 300, 220);
-            SDL_RenderDrawLine(renderer, 300, 220, 300, 260);
-            SDL_RenderDrawLine(renderer, 300, 260, 320, 260);
-            SDL_RenderDrawLine(renderer, 320, 260, 320, 245);
-            SDL_RenderDrawLine(renderer, 320, 245, 310, 245);
-
-            //Letra A
-            SDL_RenderDrawLine(renderer, 330, 260, 340, 220);
-            SDL_RenderDrawLine(renderer, 340, 220, 350, 260);
-            SDL_RenderDrawLine(renderer, 335, 245, 345, 245);
-
-            //Letra M
-            SDL_RenderDrawLine(renderer, 360, 260, 360, 220);
-            SDL_RenderDrawLine(renderer, 360, 220, 370, 240);
-            SDL_RenderDrawLine(renderer, 370, 240, 380, 220);
-            SDL_RenderDrawLine(renderer, 380, 220, 380, 260);
-
-            //Letra E
-            SDL_RenderDrawLine(renderer, 410, 220, 390, 220);
-            SDL_RenderDrawLine(renderer, 390, 220, 390, 260);
-            SDL_RenderDrawLine(renderer, 390, 260, 410, 260);
-            SDL_RenderDrawLine(renderer, 390, 240, 405, 240);
-
-            //Letra O
-            SDL_RenderDrawLine(renderer, 430, 220, 450, 220);
-            SDL_RenderDrawLine(renderer, 450, 220, 450, 260);
-            SDL_RenderDrawLine(renderer, 450, 260, 430, 260);
-            SDL_RenderDrawLine(renderer, 430, 260, 430, 220);
-
-            //Letra V
-            SDL_RenderDrawLine(renderer, 460, 220, 470, 260);
-            SDL_RenderDrawLine(renderer, 470, 260, 480, 220);
-
-            //Letra E
-            SDL_RenderDrawLine(renderer, 510, 220, 490, 220);
-            SDL_RenderDrawLine(renderer, 490, 220, 490, 260);
-            SDL_RenderDrawLine(renderer, 490, 260, 510, 260);
-            SDL_RenderDrawLine(renderer, 490, 240, 505, 240);
-
-            //Letra R
-            SDL_RenderDrawLine(renderer, 520, 260, 520, 220);
-            SDL_RenderDrawLine(renderer, 520, 220, 540, 220);
-            SDL_RenderDrawLine(renderer, 540, 220, 540, 240);
-            SDL_RenderDrawLine(renderer, 540, 240, 520, 240);
-            SDL_RenderDrawLine(renderer, 520, 240, 540, 260);
+                unsigned char rojo[3] = {255, 0, 0};
+                float pos_game_over[2] = {330.0f, 360.0f}; // Centrado perfecto en la pantalla de 1024x768
+                
+                // Imprime "GAME OVER" usando las tipografías vectoriales directas del STL
+                imprimir_cadena_2d("GAME OVER", 20.0f, pos_game_over, 40.0f, rojo, lista_modelos, renderer);
+            }
         }
-    }
         // END código del alumno
 
         SDL_RenderPresent(renderer);

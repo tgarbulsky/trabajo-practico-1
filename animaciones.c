@@ -1,4 +1,6 @@
 #include "animaciones.h"
+#include "matriz.h"
+#include "modelo.h"
 #include <stdlib.h>
 #include <math.h>
 
@@ -166,5 +168,101 @@ bool animacion_pieza_posicion(const animacion_t *a, size_t i,
     *y = a->cy + p->dist * sinf(p->ang);
     *z = p->z;
     *rot = p->rot;
+    return true;
+}
+
+// ============================================================================
+// IMPLEMENTACIÓN DE LA INFRAESTRUCTURA DE DIBUJO DIRECTO MATRICIAL 2D
+// ============================================================================
+
+void dibujar_linea_2d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 0x00);
+    SDL_RenderDrawLine(renderer, 
+                       matriz_obtener(m, 0, coord1), 
+                       matriz_obtener(m, 1, coord1), 
+                       matriz_obtener(m, 0, coord2), 
+                       matriz_obtener(m, 1, coord2));
+}
+
+bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
+    float factor[4] = {escala, -1 * escala, 1, 1};
+    char s[2] = {c, '\0'};
+    float pos[3] = {xy[0], xy[1], 0};
+    
+    matriz_t* esc = matriz_crear_escalar(4, factor);
+    if (esc == NULL) return false;
+    
+    modelo_t* modelo = modelo_buscar(modelos, s);
+    if (modelo == NULL) {
+        matriz_destruir(esc);
+        return false;
+    }
+    
+    matriz_t* extendida = matriz_extender(modelo_obtener_coords(modelo));
+    if (extendida == NULL) {
+        matriz_destruir(esc);
+        return false;
+    }
+    
+    matriz_t* escalada = matriz_multiplicar(esc, extendida);
+    matriz_destruir(esc);
+    matriz_destruir(extendida);
+    if (escalada == NULL) return false;
+    
+    matriz_t* tras = matriz_crear_tras(pos);
+    if (tras == NULL) {
+        matriz_destruir(escalada);
+        return false;
+    }
+    
+    matriz_t* app = matriz_multiplicar(tras, escalada);
+    matriz_destruir(tras);
+    matriz_destruir(escalada);
+    if (app == NULL) return false;
+    
+    size_t nlineas = modelo_obtener_nlineas(modelo);
+    for (size_t i = 0; i < nlineas; i++) {
+        size_t coord1, coord2;
+        modelo_obtener_linea(modelo, i, &coord1, &coord2);
+        dibujar_linea_2d(app, coord1, coord2, color, renderer);
+    }
+    
+    matriz_destruir(app);
+    return true;
+}
+
+bool imprimir_cadena_2d(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
+    size_t i = 0;
+    for (i = 0; s[i] != '\0'; i++) {
+        if (!imprimir_caracter_2d(s[i], escala, xy, color, modelos, renderer)) {
+            return false;
+        }
+        xy[0] += incx;
+    }
+    xy[0] -= i * incx;
+    return true;
+}
+
+bool renderizar_cristal_2d(animacion_t *a, float escala, lista_t *modelos, SDL_Renderer *renderer) {
+    if (!a->activa || a->tipo != ANIM_CRISTAL) return true;
+
+    unsigned char color[3] = {255, 255, 255}; 
+    modelo_t* modelo_base = modelo_buscar(modelos, "#");
+    if (modelo_base == NULL) return false;
+
+    size_t visibles = a->visibles;
+    for (size_t i = 0; i < visibles; i++) {
+        float x0, y0, x1, y1;
+        animacion_cristal_linea(a, i, &x0, &y0, &x1, &y1);
+
+        // Convertimos el par normalizado [-1,1] a coordenadas escaladas en la pantalla centrándolo (512, 384)
+        float pantalla_x0 = 512.0f + x0 * escala;
+        float pantalla_y0 = 384.0f - y0 * escala;
+        float pantalla_x1 = 512.0f + x1 * escala;
+        float pantalla_y1 = 384.0f - y1 * escala;
+
+        SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 255);
+        SDL_RenderDrawLine(renderer, (int)pantalla_x0, (int)pantalla_y0, (int)pantalla_x1, (int)pantalla_y1);
+    }
     return true;
 }
