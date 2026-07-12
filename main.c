@@ -445,26 +445,32 @@ int main(int argc, char *argv[]) {
         }
 
 
-// 5. Vidrio roto encima de todo usando el modelo "#"
-  // 5. Vidrio roto encima de todo usando el modelo "#"
-
+// 5. Vidrio roto animado en 2D encima de todo (Modelo "#")
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
-                size_t rajaduras = animacion_cristal_visibles(anim_cristal);
-                for (size_t i = 0; i < rajaduras; i++) {
+                // animacion_cristal_visibles crece cuadro a cuadro según el tiempo
+                size_t visibles = animacion_cristal_visibles(anim_cristal);
+                
+                for (size_t i = 0; i < visibles; i++) {
                     float x0, y0, x1, y1;
+                    // Obtenemos las coordenadas de la línea actual (entre -1 y 1)
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
                     
-                    // x0 e y0 vienen entre -1.0 y 1.0 (espacio normalizado de pantalla)
-                    // Los convertimos manualmente a píxeles sin pasar por la cámara 3D
-                    float px = (VENTANA_ANCHO / 2.0f) * (1.0f + x0);
-                    float py = (VENTANA_ALTO / 2.0f) * (1.0f - y0); // Invertimos Y para SDL
+                    // Calculamos el punto medio de la rajadura para centrar el '#'
+                    float cx = (x0 + x1) / 2.0f;
+                    float cy = (y0 + y1) / 2.0f;
                     
-                    // Reseteamos el stack de transformaciones a la matriz del HUD
-                    // Si tu render_modelo escala internamente, pasale px, py directamente.
-                    // Si render_modelo usa el stack, podés mapearlo con las funciones de tu TP.
-                    render_modelo(renderer, stack, modelo_cristal, px, py, 0.0f, 0.0f);
+                    // Transformamos las coordenadas normalizadas (-1 a 1) a píxeles de pantalla
+                    float px = (VENTANA_ANCHO / 2.0f) * (1.0f + cx);
+                    float py = (VENTANA_ALTO / 2.0f) * (1.0f - cy); // Invertimos Y para SDL
+                    
+                    // Definimos una escala para agrandar el modelo de 1 píxel (ej: 25.0f o 30.0f)
+                    float escala_pixel = 25.0f; 
+
+                    // Renderizamos el modelo plano en la pantalla
+                    // Pasamos la escala en el parámetro correspondiente de tu render_modelo
+                    render_modelo(renderer, stack, modelo_cristal, px, py, escala_pixel, 0.0f);
                 }
             }
         }
