@@ -445,32 +445,38 @@ int main(int argc, char *argv[]) {
         }
 
 
-// 5. Vidrio roto animado en 2D encima de todo (Modelo "#")
+// 5. Vidrio roto animado en 2D encima de todo
         if (animacion_activa(anim_cristal)) {
             const modelo_t *modelo_cristal = modelo_buscar(lista_modelos, "#");
             if (modelo_cristal != NULL) {
-                // animacion_cristal_visibles crece cuadro a cuadro según el tiempo
+                // Seteamos color blanco para las líneas del HUD/cristal
+                SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
+
                 size_t visibles = animacion_cristal_visibles(anim_cristal);
                 
                 for (size_t i = 0; i < visibles; i++) {
                     float x0, y0, x1, y1;
-                    // Obtenemos las coordenadas de la línea actual (entre -1 y 1)
                     animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
                     
-                    // Calculamos el punto medio de la rajadura para centrar el '#'
+                    // 1. Calculamos el punto medio donde se va a posicionar el modelo "#"
                     float cx = (x0 + x1) / 2.0f;
                     float cy = (y0 + y1) / 2.0f;
                     
-                    // Transformamos las coordenadas normalizadas (-1 a 1) a píxeles de pantalla
-                    float px = (VENTANA_ANCHO / 2.0f) * (1.0f + cx);
-                    float py = (VENTANA_ALTO / 2.0f) * (1.0f - cy); // Invertimos Y para SDL
+                    // 2. Calculamos el delta para obtener largo y ángulo
+                    float dx = x1 - x0;
+                    float dy = y1 - y0;
                     
-                    // Definimos una escala para agrandar el modelo de 1 píxel (ej: 25.0f o 30.0f)
-                    float escala_pixel = 25.0f; 
-
-                    // Renderizamos el modelo plano en la pantalla
-                    // Pasamos la escala en el parámetro correspondiente de tu render_modelo
-                    render_modelo(renderer, stack, modelo_cristal, px, py, escala_pixel, 0.0f);
+                    // 3. Calculamos la longitud del segmento (será nuestra escala)
+                    float largo = sqrtf(dx * dx + dy * dy);
+                    
+                    // 4. Calculamos el ángulo en radianes de la línea
+                    float angulo = atan2f(dy, dx);
+                    
+                    // Llamamos a render_modelo con la transformación completa:
+                    // cx, cy: posición central en la pantalla (-1 a 1)
+                    // largo: escala para que el '#' se estire lo necesario
+                    // angulo: rotación para que se alinee perfectamente con la rajadura
+                    render_modelo(renderer, stack, modelo_cristal, cx, cy, largo, angulo);
                 }
             }
         }
