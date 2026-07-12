@@ -17,10 +17,10 @@
 #define PIEZA_ALTURA_INICIAL 3.0f
 
 typedef struct {
-    float dist;      // distancia horizontal recorrida desde el centro
-    float z, vz;     // altura y velocidad vertical (tiro oblicuo)
-    float ang;       // dirección de eyección 
-    float rot, vrot; // rotación propia acumulada y su velocidad
+    float dist;      // Distancia horizontal recorrida desde el centro
+    float z, vz;     // Altura y velocidad vertical (tiro oblicuo)
+    float ang;       // Dirección de eyección 
+    float rot, vrot; // Rotación propia acumulada y su velocidad
     bool en_suelo;
 } pieza_t;
 
@@ -38,11 +38,10 @@ struct animacion {
     size_t visibles;
 
     // Explosión del enemigo
-    float cx, cy; // centro de la explosión en el mundo
+    float cx, cy; 
     pieza_t piezas[EXPLOSION_PIEZAS];
 };
 
-// Tabla de búsqueda: modelo de cada pieza eyectada
 static const char *PIEZA_MODELOS[EXPLOSION_PIEZAS] = {
     "TORRETA", "RADAR", "RESTO1", "RESTO1", "RESTO2", "RESTO2"
 };
@@ -122,7 +121,6 @@ void animacion_actualizar(animacion_t *a, float dt) {
             pieza_t *p = &a->piezas[i];
             if (p->en_suelo) continue;
 
-            // Tiro oblicuo: avance horizontal constante, caída con g
             p->dist += PIEZA_VEL_HORIZONTAL * dt;
             p->vz -= GRAVEDAD * dt;
             p->z += p->vz * dt;
@@ -172,62 +170,34 @@ bool animacion_pieza_posicion(const animacion_t *a, size_t i,
 }
 
 // ============================================================================
-// IMPLEMENTACIÓN DE LA INFRAESTRUCTURA DE DIBUJO DIRECTO MATRICIAL 2D
+// IMPLEMENTACIÓN DE LA INFRAESTRUCTURA DE DIBUJO DIRECTO 2D
 // ============================================================================
 
-void dibujar_linea_2d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 0x00);
-    SDL_RenderDrawLine(renderer, 
-                       matriz_obtener(m, 0, coord1), 
-                       matriz_obtener(m, 1, coord1), 
-                       matriz_obtener(m, 0, coord2), 
-                       matriz_obtener(m, 1, coord2));
-}
-
 bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
-    float factor[4] = {escala, -1 * escala, 1, 1};
     char s[2] = {c, '\0'};
-    float pos[3] = {xy[0], xy[1], 0};
-    
-    matriz_t* esc = matriz_crear_escalar(4, factor);
-    if (esc == NULL) return false;
-    
     modelo_t* modelo = modelo_buscar(modelos, s);
-    if (modelo == NULL) {
-        matriz_destruir(esc);
-        return false;
-    }
-    
-    matriz_t* extendida = matriz_extender(modelo_obtener_coords(modelo));
-    if (extendida == NULL) {
-        matriz_destruir(esc);
-        return false;
-    }
-    
-    matriz_t* escalada = matriz_multiplicar(esc, extendida);
-    matriz_destruir(esc);
-    matriz_destruir(extendida);
-    if (escalada == NULL) return false;
-    
-    matriz_t* tras = matriz_crear_tras(pos);
-    if (tras == NULL) {
-        matriz_destruir(escalada);
-        return false;
-    }
-    
-    matriz_t* app = matriz_multiplicar(tras, escalada);
-    matriz_destruir(tras);
-    matriz_destruir(escalada);
-    if (app == NULL) return false;
-    
-    size_t nlineas = modelo_obtener_nlineas(modelo);
+    if (modelo == NULL) return false;
+
+    // Conectamos directamente con los getters nativos de tu modelo.c
+    const float *coords = modelo_coordenadas(modelo);[cite: 7]
+    const size_t *lineas = modelo_lineas(modelo);[cite: 7]
+    size_t nlineas = modelo_nlineas(modelo);[cite: 7]
+
+    SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 255);
+
     for (size_t i = 0; i < nlineas; i++) {
-        size_t coord1, coord2;
-        modelo_obtener_linea(modelo, i, &coord1, &coord2);
-        dibujar_linea_2d(app, coord1, coord2, color, renderer);
+        size_t i0 = lineas[2 * i];[cite: 7]
+        size_t i1 = lineas[2 * i + 1];[cite: 7]
+
+        // Transformación geométrica directa a píxeles
+        float x0 = xy[0] + coords[3 * i0] * escala;
+        float y0 = xy[1] - coords[3 * i0 + 1] * escala; 
+        float x1 = xy[0] + coords[3 * i1] * escala;
+        float y1 = xy[1] - coords[3 * i1 + 1] * escala;
+
+        SDL_RenderDrawLine(renderer, (int)x0, (int)y0, (int)x1, (int)y1);
     }
-    
-    matriz_destruir(app);
+
     return true;
 }
 
@@ -237,25 +207,24 @@ bool imprimir_cadena_2d(const char* s, float escala, float xy[2], float incx, un
         if (!imprimir_caracter_2d(s[i], escala, xy, color, modelos, renderer)) {
             return false;
         }
-        xy[0] += incx;
+        xy[0] += incx; 
     }
-    xy[0] -= i * incx;
+    xy[0] -= i * incx; 
     return true;
 }
 
 bool renderizar_cristal_2d(animacion_t *a, float escala, lista_t *modelos, SDL_Renderer *renderer) {
     if (!a->activa || a->tipo != ANIM_CRISTAL) return true;
+    (void)modelos;
 
     unsigned char color[3] = {255, 255, 255}; 
-    modelo_t* modelo_base = modelo_buscar(modelos, "#");
-    if (modelo_base == NULL) return false;
-
     size_t visibles = a->visibles;
+
     for (size_t i = 0; i < visibles; i++) {
         float x0, y0, x1, y1;
         animacion_cristal_linea(a, i, &x0, &y0, &x1, &y1);
 
-        // Convertimos el par normalizado [-1,1] a coordenadas escaladas en la pantalla centrándolo (512, 384)
+        // Mapeo directo centrado en la resolución de pantalla (1024x768)
         float pantalla_x0 = 512.0f + x0 * escala;
         float pantalla_y0 = 384.0f - y0 * escala;
         float pantalla_x1 = 512.0f + x1 * escala;

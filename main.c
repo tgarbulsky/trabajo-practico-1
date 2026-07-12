@@ -448,18 +448,18 @@ int main(int argc, char *argv[]) {
 // 5. Vidrio roto animado en 2D encima de todo
         // //beggin codigo alumno
         if (animacion_activa(anim_cristal)) {
-            // Pasamos a dibujar el cristal usando coordenadas matriciales directas 2D centradas
+            // Renderiza las fisuras directamente escaladas en el centro de la escena 2D
             renderizar_cristal_2d(anim_cristal, 350.0f, lista_modelos, renderer);
         }
 
-        // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
+        // Fin del juego: al finalizar la animación de impacto, se imprime estáticamente el cartel
         if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
             tiempo_fin += dt;
             if (tiempo_fin > 1.5f) {
                 unsigned char rojo[3] = {255, 0, 0};
-                float pos_game_over[2] = {330.0f, 360.0f}; // Centrado perfecto en la pantalla de 1024x768
+                float pos_game_over[2] = {330.0f, 360.0f}; // Centrado óptimo en pantalla
                 
-                // Imprime "GAME OVER" usando las tipografías vectoriales directas del STL
+                // Dibuja el cartel vectorialmente utilizando los tipos nativos del STL
                 imprimir_cadena_2d("GAME OVER", 20.0f, pos_game_over, 40.0f, rojo, lista_modelos, renderer);
             }
         }
