@@ -1,4 +1,3 @@
-Makefile
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -g $(shell sdl2-config --cflags)
 LDLIBS = $(shell sdl2-config --libs) -lm
