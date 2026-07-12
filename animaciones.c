@@ -170,77 +170,61 @@ bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
     return true;
 }
 
+void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista);
+
 void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
     if (!a || !matriz_vista) return;
 
-    // Cada fragmento es una línea suelta. Vamos a procesarlos uno por uno.
+    // Silenciamos los parámetros de ancho/alto que ya no usamos manualmente
+    (void)width;
+    (void)height;
+
+    // Iteramos por cada fragmento (arista) de la explosión
     for (size_t i = 0; i < a->cant; i++) {
         const fragmento_t *f = &a->fragmentos[i];
 
-        // Para no romper el pipeline homogéneo de tu TDA, creamos una matriz de 2 vértices y 3 columnas,
-        // igual que hace tu función 'mi_dibujar_modelo_3d' exitosamente.
-        matriz_t *puntos_locales = _matriz_crear(2, 3);
-        if (!puntos_locales) continue;
-
-        // Seno y coseno de la rotación intrínseca de la arista sobre su propio baricentro
+        // 1. Calculamos la rotación intrínseca del fragmento sobre su propio baricentro
         float c = cosf(f->rot_intrinseca), s = sinf(f->rot_intrinseca);
 
-        // --- VÉRTICE 1 ---
-        // 1. Calculamos la posición relativa al baricentro original del fragmento
+        // Vértice 1 relativo y rotado
         float rx1 = f->x1 - f->bx;
         float ry1 = f->y1 - f->by;
-        // 2. Aplicamos la rotación intrínseca en su propio eje XY
         float rot_x1 = rx1 * c - ry1 * s;
         float rot_y1 = rx1 * s + ry1 * c;
-        // 3. Trasladamos al espacio del mundo sumando el desplazamiento de la explosión y el origen del tanque
+
+        // Vértice 2 relativo y rotado
+        float rx2 = f->x2 - f->bx;
+        float ry2 = f->y2 - f->by;
+        float rot_x2 = rx2 * c - ry2 * s;
+        float rot_y2 = rx2 * s + ry2 * c;
+
+        // 2. Posiciones finales en el espacio absoluto del mundo
         float wx1 = rot_x1 + f->bx + a->orig_x;
         float wy1 = rot_y1 + f->by + a->orig_y;
         float wz1 = f->z1 + f->bz;
 
-        matriz_establecer(puntos_locales, 0, 0, wx1);
-        matriz_establecer(puntos_locales, 0, 1, wy1);
-        matriz_establecer(puntos_locales, 0, 2, wz1);
-
-        // --- VÉRTICE 2 ---
-        // 1. Posición relativa al baricentro
-        float rx2 = f->x2 - f->bx;
-        float ry2 = f->y2 - f->by;
-        // 2. Rotación intrínseca
-        float rot_x2 = rx2 * c - ry2 * s;
-        float rot_y2 = rx2 * s + ry2 * c;
-        // 3. Traslación al espacio del mundo
         float wx2 = rot_x2 + f->bx + a->orig_x;
         float wy2 = rot_y2 + f->by + a->orig_y;
         float wz2 = f->z2 + f->bz;
 
-        matriz_establecer(puntos_locales, 1, 0, wx2);
-        matriz_establecer(puntos_locales, 1, 1, wy2);
-        matriz_establecer(puntos_locales, 1, 2, wz2);
+        // 3. Construimos un modelo_t ficticio en memoria estática que representa la línea
+        float coords[6] = {
+            wx1, wy1, wz1,  // Vértice 0
+            wx2, wy2, wz2   // Vértice 1
+        };
+        size_t lineas[2] = {0, 1}; // Conecta el vértice 0 con el 1
 
-        // Proyectamos usando de forma segura tu TDA Matriz
-        matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
-        matriz_destruir(puntos_locales);
-        if (!puntos_proyectados) continue;
+        // Usamos tu constructor oficial para crear un objeto seguro
+        modelo_t *mod_fragmento = modelo_crear("FRAG", coords, 2, lineas, 1);
+        if (!mod_fragmento) continue;
 
-        // Filtro de clipping idéntico al de tu 'mi_dibujar_modelo_3d'
-        float w1 = matriz_obtener(puntos_proyectados, 0, 2);
-        float w2 = matriz_obtener(puntos_proyectados, 1, 2);
+        // 4. Delegamos el dibujo a tu función del main.c que funciona perfecto.
+        // Ponemos un color verde brillante/amarillo clásico de Battlezone
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
+        mi_dibujar_modelo_3d(renderer, mod_fragmento, 0.0f, 0.0f, 0.0f, 0.0f, matriz_vista);
 
-        if (w1 >= 1.0f && w2 >= 1.0f) {
-            float x1_h = matriz_obtener(puntos_proyectados, 0, 0);
-            float y1_h = matriz_obtener(puntos_proyectados, 0, 1);
-            float x2_h = matriz_obtener(puntos_proyectados, 1, 0);
-            float y2_h = matriz_obtener(puntos_proyectados, 1, 1);
-
-            int px1 = (int)(x1_h * (width / 2) + (width / 2));
-            int py1 = (int)(height / 2 - y1_h * (height / 2));
-            int px2 = (int)(x2_h * (width / 2) + (width / 2));
-            int py2 = (int)(height / 2 - y2_h * (height / 2));
-
-            SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
-        }
-
-        matriz_destruir(puntos_proyectados);
+        // Liberamos el modelo temporal inmediatamente para no perder memoria
+        modelo_destruir(mod_fragmento);
     }
 }
 

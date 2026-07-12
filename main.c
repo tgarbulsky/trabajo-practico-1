@@ -58,7 +58,7 @@ static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, fl
     const size_t *lineas = modelo_lineas(mod);
     size_t nlineas = modelo_nlineas(mod);
 
-    // Creamos la matriz dinámica de puntos locales usando tu constructor
+    // Creamos la matriz dinámica de puntos locales de manera segura
     matriz_t *puntos_locales = _matriz_crear(nvertices, 3);
     if (!puntos_locales) return;
 
@@ -72,7 +72,7 @@ static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, fl
         matriz_establecer(puntos_locales, i, 2, wz);
     }
 
-    // Aplicamos tu proyección homogénea
+    // Aplicamos tu proyección homogénea nativa
     matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
     matriz_destruir(puntos_locales);
     if (!puntos_proyectados) return;
@@ -81,7 +81,6 @@ static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, fl
         size_t i1 = lineas[i * 2];
         size_t i2 = lineas[i * 2 + 1];
 
-        // Filtro de clipping homogéneo según la columna 2 (w) de tu TDA
         float w1 = matriz_obtener(puntos_proyectados, i1, 2);
         float w2 = matriz_obtener(puntos_proyectados, i2, 2);
         if (w1 < 1.0f || w2 < 1.0f) continue;
@@ -104,7 +103,7 @@ static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, fl
 // END código del alumno
 
 int main(int argc, char *argv[]) {
-    (void)argc; // lei que silencia el warning de parametro no usado
+    (void)argc; 
     (void)argv;
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -169,12 +168,12 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // LIMPIEZA DE PANTALLA EN NEGRO INICIAL
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
         SDL_RenderClear(renderer);
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
         // BEGIN código del alumno
-        // 1. Lógica interna
+        // 1. Lógica interna de actualización
         mundo_actualizar(mundo, dt);
 
         if (mundo_evento_jugador_impactado(mundo)) {
@@ -193,16 +192,19 @@ int main(int argc, char *argv[]) {
                 animacion_cristales_destruir(cristales); cristales = NULL;
             }
         }
-        lista_iter_t *it = lista_iter_crear(an_enemigos);
-        while (!lista_iter_al_final(it)) {
-            if (!animacion_enemigo_actualizar(lista_iter_ver_actual(it), dt)) {
-                animacion_enemigo_destruir(lista_iter_ver_actual(it));
-                lista_iter_borrar(it);
-            } else lista_iter_avanzar(it);
+        
+        lista_iter_t *it_logica = lista_iter_crear(an_enemigos);
+        while (!lista_iter_al_final(it_logica)) {
+            if (!animacion_enemigo_actualizar(lista_iter_ver_actual(it_logica), dt)) {
+                animacion_enemigo_destruir(lista_iter_ver_actual(it_logica));
+                lista_iter_borrar(it_logica);
+            } else {
+                lista_iter_avanzar(it_logica);
+            }
         }
-        lista_iter_destruir(it);
+        lista_iter_destruir(it_logica);
 
-        // 2. Renderizado 3D (Cámara construida con tus funciones de matriz.h)
+        // 2. Renderizado 3D del Mundo
         tanque_t *jugador = mundo_jugador(mundo);
         float jx = tanque_x(jugador), jy = tanque_y(jugador), jphi = tanque_phi(jugador);
 
@@ -219,17 +221,20 @@ int main(int argc, char *argv[]) {
         matriz_destruir(m_per);
         matriz_destruir(m_rot_trans);
 
+        // Dibujar Montañas en VERDE OSCURO
         SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255);
         const modelo_t *mt = modelo_buscar(lista_modelos, "MONTAÑAS");
         if (!mt) mt = modelo_buscar(lista_modelos, "MONTANIAS");
         if (mt) mi_dibujar_modelo_3d(renderer, mt, jx, jy, 0, 0, matriz_camara_completa);
 
+        // Dibujar Obstáculos y Entidades en VERDE BRILLANTE
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         size_t nobst = mundo_num_obstaculos(mundo);
         for (size_t i = 0; i < nobst; i++) {
             obstaculo_t *o = mundo_obstaculo(mundo, i);
             mi_dibujar_modelo_3d(renderer, obstaculo_modelo(o), obstaculo_x(o), obstaculo_y(o), obstaculo_phi(o), 0, matriz_camara_completa);
         }
+        
         tanque_t *enemigo = mundo_enemigo(mundo);
         if (enemigo) {
             const modelo_t *me = modelo_buscar(lista_modelos, "ENEMIGO");
@@ -244,16 +249,18 @@ int main(int argc, char *argv[]) {
             const modelo_t *mm = modelo_buscar(lista_modelos, "MISIL");
             if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(jugador), tanque_misil_y(jugador), tanque_misil_phi(jugador), 0, matriz_camara_completa);
         }
-        it = lista_iter_crear(an_enemigos);
-        while (!lista_iter_al_final(it)) {
-            animacion_enemigo_dibujar(lista_iter_ver_actual(it), renderer, matriz_camara_completa, VENTANA_ANCHO, VENTANA_ALTO);
-            lista_iter_avanzar(it);
+        
+        // Dibujar explosiones de enemigos usando el iterador de dibujo exclusivo
+        lista_iter_t *it_dibujo = lista_iter_crear(an_enemigos);
+        while (!lista_iter_al_final(it_dibujo)) {
+            animacion_enemigo_dibujar(lista_iter_ver_actual(it_dibujo), renderer, matriz_camara_completa, VENTANA_ANCHO, VENTANA_ALTO);
+            lista_iter_avanzar(it_dibujo);
         }
-        lista_iter_destruir(it);
+        lista_iter_destruir(it_dibujo);
 
         matriz_destruir(matriz_camara_completa);
 
-        // 3. Renderizado HUD 2D
+        // 3. Renderizado HUD 2D (Capa superior, en AMARILLO)
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
         char str_pts[32]; sprintf(str_pts, "%06d", mundo_puntaje(mundo));
         mi_dibujar_texto_hud(renderer, lista_modelos, str_pts, 40.0f, 50.0f, 1.2f);
