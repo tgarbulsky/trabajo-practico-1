@@ -179,15 +179,15 @@ bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color
     if (modelo == NULL) return false;
 
     // Conectamos directamente con los getters nativos de tu modelo.c
-    const float *coords = modelo_coordenadas(modelo);[cite: 7]
-    const size_t *lineas = modelo_lineas(modelo);[cite: 7]
-    size_t nlineas = modelo_nlineas(modelo);[cite: 7]
+    const float *coords = modelo_coordenadas(modelo);
+    const size_t *lineas = modelo_lineas(modelo);
+    size_t nlineas = modelo_nlineas(modelo);
 
     SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 255);
 
     for (size_t i = 0; i < nlineas; i++) {
-        size_t i0 = lineas[2 * i];[cite: 7]
-        size_t i1 = lineas[2 * i + 1];[cite: 7]
+        size_t i0 = lineas[2 * i];
+        size_t i1 = lineas[2 * i + 1];
 
         // Transformación geométrica directa a píxeles
         float x0 = xy[0] + coords[3 * i0] * escala;
