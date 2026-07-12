@@ -50,7 +50,7 @@ static void mi_dibujar_texto_hud(SDL_Renderer *renderer, lista_t *lista, const c
     }
 }
 
-static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista) {
+void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista) {
     if (!mod || !matriz_vista) return;
 
     size_t nvertices = modelo_ncoordenadas(mod);

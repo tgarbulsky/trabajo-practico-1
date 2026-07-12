@@ -21,6 +21,8 @@ struct animacion_cristales {
     float tiempo;
 };
 
+void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista);
+
 animacion_cristales_t *animacion_cristales_crear(size_t cant) {
     animacion_cristales_t *a = malloc(sizeof(animacion_cristales_t));
     if (!a) return NULL;
@@ -170,7 +172,6 @@ bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
     return true;
 }
 
-void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista);
 
 void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
     if (!a || !matriz_vista) return;
