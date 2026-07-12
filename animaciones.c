@@ -170,47 +170,64 @@ bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
     return true;
 }
 
-void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const float matriz_vista[4][4], int width, int height) {
-    if (!a) return;
-    SDL_SetRenderDrawColor(renderer, 255, 69, 0, 255); // Color rojo/naranja fuego
+void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
+    if (!a || !matriz_vista) return;
 
-    for (size_t i = 0; i < a->cant; i++) {
-        // Obtener los extremos relativos a su propio baricentro dinámico
-        float lx1 = a->fragmentos[i].x1 - (a->fragmentos[i].x1 + a->fragmentos[i].x2)/2.0f;
-        float ly1 = a->fragmentos[i].y1 - (a->fragmentos[i].y1 + a->fragmentos[i].y2)/2.0f;
-        float lx2 = a->fragmentos[i].x2 - (a->fragmentos[i].x1 + a->fragmentos[i].x2)/2.0f;
-        float ly2 = a->fragmentos[i].y2 - (a->fragmentos[i].y1 + a->fragmentos[i].y2)/2.0f;
+    // Iteramos por cada una de las piezas en las que se desarmó el tanque enemigo
+    for (size_t i = 0; i < a->cant_piezas; i++) {
+        const pieza_t *p = &a->piezas[i];
+        size_t nvertices = p->nvertices;
 
-        // Rotar de manera local/intrinseca cada vértice en el plano XY de la pieza antes de posicionarla
-        float c = cosf(a->fragmentos[i].rot_intrinseca);
-        float s = sinf(a->fragmentos[i].rot_intrinseca);
+        // 1. Creamos la matriz dinámica de puntos en espacio local/mundo usando tu constructor
+        matriz_t *puntos_locales = _matriz_crear(nvertices, 3);
+        if (!puntos_locales) continue;
 
-        float rx1 = lx1 * c - ly1 * s + a->fragmentos[i].bx + a->orig_x;
-        float ry1 = lx1 * s + ly1 * c + a->fragmentos[i].by + a->orig_y;
-        float rz1 = a->fragmentos[i].z1 - (a->fragmentos[i].z1 + a->fragmentos[i].z2)/2.0f + a->fragmentos[i].bz;
+        // Calculamos rotación intrínseca de la pieza rota
+        float c = cosf(p->angulo_rot), s = sinf(p->angulo_rot);
 
-        float rx2 = lx2 * c - ly2 * s + a->fragmentos[i].bx + a->orig_x;
-        float ry2 = lx2 * s + ly2 * c + a->fragmentos[i].by + a->orig_y;
-        float rz2 = a->fragmentos[i].z2 - (a->fragmentos[i].z1 + a->fragmentos[i].z2)/2.0f + a->fragmentos[i].bz;
+        for (size_t v = 0; v < nvertices; v++) {
+            // Rotación local del fragmento sobre su propio centro + traslación por su física de expansión
+            float rx = p->vertices_originales[v * 3] * c - p->vertices_originales[v * 3 + 1] * s;
+            float ry = p->vertices_originales[v * 3] * s + p->vertices_originales[v * 3 + 1] * c;
 
-        // Proyectar Vértice 1
-        float vx1 = rx1 * matriz_vista[0][0] + ry1 * matriz_vista[0][1] + rz1 * matriz_vista[0][2] + matriz_vista[0][3];
-        float vy1 = rx1 * matriz_vista[1][0] + ry1 * matriz_vista[1][1] + rz1 * matriz_vista[1][2] + matriz_vista[1][3];
-        float vz1 = rx1 * matriz_vista[2][0] + ry1 * matriz_vista[2][1] + rz1 * matriz_vista[2][2] + matriz_vista[2][3];
+            float wx = rx + p->x;
+            float wy = ry + p->y;
+            float wz = p->vertices_originales[v * 3 + 2] + p->z; // Incorporamos gravedad acumulada en Z
 
-        // Proyectar Vértice 2
-        float vx2 = rx2 * matriz_vista[0][0] + ry2 * matriz_vista[0][1] + rz2 * matriz_vista[0][2] + matriz_vista[0][3];
-        float vy2 = rx2 * matriz_vista[1][0] + ry2 * matriz_vista[1][1] + rz2 * matriz_vista[1][2] + matriz_vista[1][3];
-        float vz2 = rx2 * matriz_vista[2][0] + ry2 * matriz_vista[2][1] + rz2 * matriz_vista[2][2] + matriz_vista[2][3];
+            matriz_establecer(puntos_locales, v, 0, wx);
+            matriz_establecer(puntos_locales, v, 1, wy);
+            matriz_establecer(puntos_locales, v, 2, wz);
+        }
 
-        if (vz1 <= 0.1f || vz2 <= 0.1f) continue;
+        // 2. Proyectamos usando el pipeline homogéneo de tu TDA Matriz
+        matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
+        matriz_destruir(puntos_locales);
+        if (!puntos_proyectados) continue;
 
-        int px1 = (int)((vx1 / vz1) * (width / 2) + (width / 2));
-        int py1 = (int)(height / 2 - (vy1 / vz1) * (height / 2));
-        int px2 = (int)((vx2 / vz2) * (width / 2) + (width / 2));
-        int py2 = (int)(height / 2 - (vy2 / vz2) * (height / 2));
+        // 3. Dibujamos las aristas que componen esta pieza
+        for (size_t j = 0; j < p->nlineas; j++) {
+            size_t i1 = p->lineas[j * 2];
+            size_t i2 = p->lineas[j * 2 + 1];
 
-        SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
+            // Filtro de clipping homogéneo según la columna de profundidad (w) de tu TDA
+            float w1 = matriz_obtener(puntos_proyectados, i1, 2);
+            float w2 = matriz_obtener(puntos_proyectados, i2, 2);
+            if (w1 < 1.0f || w2 < 1.0f) continue;
+
+            float x1_h = matriz_obtener(puntos_proyectados, i1, 0);
+            float y1_h = matriz_obtener(puntos_proyectados, i1, 1);
+            float x2_h = matriz_obtener(puntos_proyectados, i2, 0);
+            float y2_h = matriz_obtener(puntos_proyectados, i2, 1);
+
+            int px1 = (int)(x1_h * (width / 2) + (width / 2));
+            int py1 = (int)(height / 2 - y1_h * (height / 2));
+            int px2 = (int)(x2_h * (width / 2) + (width / 2));
+            int py2 = (int)(height / 2 - y2_h * (height / 2));
+
+            SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
+        }
+
+        matriz_destruir(puntos_proyectados);
     }
 }
 

@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "modelo.h"
+#include "matriz.h"
 
 // --- TDA Animación de Cristales Rotos (Efecto 2D sobre el HUD) ---
 typedef struct animacion_cristales animacion_cristales_t;
