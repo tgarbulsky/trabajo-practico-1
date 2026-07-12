@@ -1,3 +1,4 @@
+Makefile
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -g $(shell sdl2-config --cflags)
 LDLIBS = $(shell sdl2-config --libs) -lm
@@ -20,12 +21,11 @@ lista.o: lista.c lista.h
 cola.o: cola.c cola.h
 modelo.o: modelo.c modelo.h lista.h
 obstaculo.o: obstaculo.c obstaculo.h modelo.h
-tanque.o: tanque.c tanque.h obstaculo.h modelo.h misil.h
-misil.o: misil.c misil.h
+tanque.o: tanque.c tanque.h obstaculo.h modelo.h misil.h matriz.h
+misil.o: misil.c misil.h matriz.h
 stl.o: stl.c stl.h
-mundo.o: mundo.c mundo.h lista.h tanque.h obstaculo.h modelo.h
+mundo.o: mundo.c mundo.h lista.h tanque.h obstaculo.h modelo.h misil.h stl.h
 animaciones.o: animaciones.c animaciones.h
-
 
 valgrind: battlezone
 	valgrind --leak-check=full --show-leak-kinds=all ./battlezone
