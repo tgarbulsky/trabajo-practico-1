@@ -452,8 +452,17 @@ int main(int argc, char *argv[]) {
             if (modelo_cristal != NULL) {
                 SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
-                // Lo dibujamos en el centro, sin rotar y con escala limpia
-                render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 1.0f, 0.0f);
+                size_t visibles = animacion_cristal_visibles(anim_cristal);
+                
+                for (size_t i = 0; i < visibles; i++) {
+                    float x0, y0, x1, y1;
+                    animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
+                    
+                    // Probamos renderizar cada segmento activo en su posición de inicio (x0, y0)
+                    // con escala 1.0f y sin rotación adicional, dejando que la matriz ident
+                    // del stack lo ubique en el espacio normalizado.
+                    render_modelo(renderer, stack, modelo_cristal, x0, y0, 1.0f, 0.0f);
+                }
             }
         }
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
