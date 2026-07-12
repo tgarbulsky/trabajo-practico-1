@@ -452,32 +452,9 @@ int main(int argc, char *argv[]) {
                 // Seteamos color blanco para las líneas del HUD/cristal
                 SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
-                size_t visibles = animacion_cristal_visibles(anim_cristal);
-                
-                for (size_t i = 0; i < visibles; i++) {
-                    float x0, y0, x1, y1;
-                    animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
-                    
-                    // 1. Calculamos el punto medio donde se va a posicionar el modelo "#"
-                    float cx = (x0 + x1) / 2.0f;
-                    float cy = (y0 + y1) / 2.0f;
-                    
-                    // 2. Calculamos el delta para obtener largo y ángulo
-                    float dx = x1 - x0;
-                    float dy = y1 - y0;
-                    
-                    // 3. Calculamos la longitud del segmento (será nuestra escala)
-                    float largo = sqrtf(dx * dx + dy * dy);
-                    
-                    // 4. Calculamos el ángulo en radianes de la línea
-                    float angulo = atan2f(dy, dx);
-                    
-                    // Llamamos a render_modelo con la transformación completa:
-                    // cx, cy: posición central en la pantalla (-1 a 1)
-                    // largo: escala para que el '#' se estire lo necesario
-                    // angulo: rotación para que se alinee perfectamente con la rajadura
-                    render_modelo(renderer, stack, modelo_cristal, cx, cy, largo, angulo);
-                }
+                // Como el modelo "#" ya es la animación completa en coordenadas -1 a 1,
+                // lo dibujamos centrado (0, 0), con escala 1.0f y sin rotación (0.0f).
+                render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 1.0f, 0.0f);
             }
         }
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
