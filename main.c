@@ -104,6 +104,8 @@ static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, fl
 // END código del alumno
 
 int main(int argc, char *argv[]) {
+    (void)argc; // lei que silencia el warning de parametro no usado
+    (void)argv;
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window;
