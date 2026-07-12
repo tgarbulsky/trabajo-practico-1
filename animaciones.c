@@ -173,51 +173,56 @@ bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
 void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
     if (!a || !matriz_vista) return;
 
-    // Iteramos por cada una de las aristas individuales (fragmentos) en las que explotó el tanque
+    // Cada fragmento es una línea suelta. Vamos a procesarlos uno por uno.
     for (size_t i = 0; i < a->cant; i++) {
         const fragmento_t *f = &a->fragmentos[i];
 
-        // Cada fragmento es una línea suelta, por lo tanto usamos exactamente 2 vértices
+        // Para no romper el pipeline homogéneo de tu TDA, creamos una matriz de 2 vértices y 3 columnas,
+        // igual que hace tu función 'mi_dibujar_modelo_3d' exitosamente.
         matriz_t *puntos_locales = _matriz_crear(2, 3);
         if (!puntos_locales) continue;
 
-        // Calculamos el seno y coseno del ángulo de rotación propia del fragmento
+        // Seno y coseno de la rotación intrínseca de la arista sobre su propio baricentro
         float c = cosf(f->rot_intrinseca), s = sinf(f->rot_intrinseca);
 
         // --- VÉRTICE 1 ---
-        // 1. Conseguimos el vector relativo a su propio baricentro (su centro de masa)
+        // 1. Calculamos la posición relativa al baricentro original del fragmento
         float rx1 = f->x1 - f->bx;
         float ry1 = f->y1 - f->by;
-
-        // 2. Rotamos intrínsecamente en el plano XY alrededor de su propio eje
+        // 2. Aplicamos la rotación intrínseca en su propio eje XY
         float rot_x1 = rx1 * c - ry1 * s;
         float rot_y1 = rx1 * s + ry1 * c;
+        // 3. Trasladamos al espacio del mundo sumando el desplazamiento de la explosión y el origen del tanque
+        float wx1 = rot_x1 + f->bx + a->orig_x;
+        float wy1 = rot_y1 + f->by + a->orig_y;
+        float wz1 = f->z1 + f->bz;
 
-        // 3. Sumamos el baricentro dinámico desplazado y la posición original del tanque en el mundo
-        matriz_establecer(puntos_locales, 0, 0, rot_x1 + f->bx + a->orig_x);
-        matriz_establecer(puntos_locales, 0, 1, rot_y1 + f->by + a->orig_y);
-        matriz_establecer(puntos_locales, 0, 2, f->z1 + f->bz);
+        matriz_establecer(puntos_locales, 0, 0, wx1);
+        matriz_establecer(puntos_locales, 0, 1, wy1);
+        matriz_establecer(puntos_locales, 0, 2, wz1);
 
         // --- VÉRTICE 2 ---
-        // 1. Conseguimos el vector relativo al baricentro
+        // 1. Posición relativa al baricentro
         float rx2 = f->x2 - f->bx;
         float ry2 = f->y2 - f->by;
-
-        // 2. Rotamos intrínsecamente
+        // 2. Rotación intrínseca
         float rot_x2 = rx2 * c - ry2 * s;
         float rot_y2 = rx2 * s + ry2 * c;
+        // 3. Traslación al espacio del mundo
+        float wx2 = rot_x2 + f->bx + a->orig_x;
+        float wy2 = rot_y2 + f->by + a->orig_y;
+        float wz2 = f->z2 + f->bz;
 
-        // 3. Trasladamos al espacio del mundo sumando el baricentro y la base
-        matriz_establecer(puntos_locales, 1, 0, rot_x2 + f->bx + a->orig_x);
-        matriz_establecer(puntos_locales, 1, 1, rot_y2 + f->by + a->orig_y);
-        matriz_establecer(puntos_locales, 1, 2, f->z2 + f->bz);
+        matriz_establecer(puntos_locales, 1, 0, wx2);
+        matriz_establecer(puntos_locales, 1, 1, wy2);
+        matriz_establecer(puntos_locales, 1, 2, wz2);
 
-        // Proyectamos el fragmento usando el pipeline de tu matriz_t
+        // Proyectamos usando de forma segura tu TDA Matriz
         matriz_t *puntos_proyectados = matriz_aplicar(matriz_vista, puntos_locales);
         matriz_destruir(puntos_locales);
         if (!puntos_proyectados) continue;
 
-        // Filtro de clipping usando la columna de profundidad (w) de tu TDA
+        // Filtro de clipping idéntico al de tu 'mi_dibujar_modelo_3d'
         float w1 = matriz_obtener(puntos_proyectados, 0, 2);
         float w2 = matriz_obtener(puntos_proyectados, 1, 2);
 
