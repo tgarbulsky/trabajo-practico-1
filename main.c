@@ -452,34 +452,8 @@ int main(int argc, char *argv[]) {
             if (modelo_cristal != NULL) {
                 SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
-                size_t visibles = animacion_cristal_visibles(anim_cristal);
-                
-                for (size_t i = 0; i < visibles; i++) {
-                    float x0, y0, x1, y1;
-                    animacion_cristal_linea(anim_cristal, i, &x0, &y0, &x1, &y1);
-                    
-                    // Posición central del segmento
-                    float cx = (x0 + x1) / 2.0f;
-                    float cy = (y0 + y1) / 2.0f;
-                    
-                    // Vector director
-                    float dx = x1 - x0;
-                    float dy = y1 - y0;
-                    
-                    // Ángulo de la línea
-                    float angulo = atan2f(dy, dx);
-                    
-                    // Medimos la distancia real entre los puntos
-                    float largo_real = sqrtf(dx * dx + dy * dy);
-                    
-                    // AJUSTE DE ESCALA: 
-                    // Si el modelo "#" mide 2 unidades (va de -1 a 1), su largo base es 2.
-                    // Para que mida lo que dice la animación, lo escalamos por (largo_real / 2.0f).
-                    // Si aun así se ve grande, probá cambiando el divisor a un número mayor (ej: 4.0f o 10.0f).
-                    float escala = largo_real / 2.0f; 
-                    
-                    render_modelo(renderer, stack, modelo_cristal, cx, cy, escala, angulo);
-                }
+                // Lo dibujamos en el centro, sin rotar y con escala limpia
+                render_modelo(renderer, stack, modelo_cristal, 0.0f, 0.0f, 1.0f, 0.0f);
             }
         }
         // Fin del juego: al terminar la animación, activamos el estado estático en vez de cerrar
