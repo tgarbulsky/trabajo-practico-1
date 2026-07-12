@@ -1,217 +1,89 @@
 #include <SDL2/SDL.h>
-#include "modelo.h"
-#include "obstaculo.h"
-#include "tanque.h"
-#include "stl.h"
-#include "matriz.h"
-#include "pila.h"
-#include "lista.h"
-#include "mundo.h"
-#include "animaciones.h"
+
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
-#include <time.h>
 
 #define VENTANA_ANCHO 1024
 #define VENTANA_ALTO 768
+
 #define JUEGO_FPS 24
+
+// BEGIN código del alumno
+#include <stdlib.h>
+#include <time.h>
+#include "lista.h"
+#include "cola.h"
+#include "pila.h"
+#include "stl.h"
+#include "matriz.h"
+#include "modelo.h"
+#include "mundo.h"
+#include "animaciones.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-// BEGIN código del alumno (funciones auxiliares)
-
-#define ALCANCE_MISIL 48.0f   // 24 m/s durante 2 segundos
-#define UMBRAL_PUNTERIA 0.1f
-// Mitad del campo visual horizontal: atan(1024/768) ≈ 0.93 rad
-#define MEDIO_FOV 0.93f
-
-static float normalizar_angulo(float a) {
-    while (a > (float)M_PI) a -= 2 * (float)M_PI;
-    while (a <= -(float)M_PI) a += 2 * (float)M_PI;
-    return a;
-}
-
-static void destruir_modelo_void(void *m) {
-    modelo_destruir(m);
-}
-
-// Carga todos los modelos del archivo STL binario en la lista.
-static bool cargar_modelos(lista_t *lista, const char *ruta) {
-    FILE *f = fopen(ruta, "rb");
-    if (f == NULL) return false;
-
-    unidades_t unidades;
-    size_t maxlong;
-    if (!leer_encabezado_stl(f) || !leer_formato_STL(f, &unidades, &maxlong)) {
-        fclose(f);
-        return false;
+// Funciones auxiliares del alumno para no ensuciar el flujo principal
+static void mi_dibujar_modelo_2d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float escala) {
+    if (!mod) return;
+    const float *coords = modelo_coordenadas(mod);
+    const size_t *lineas = modelo_lineas(mod);
+    size_t nlineas = modelo_nlineas(mod);
+    for (size_t i = 0; i < nlineas; i++) {
+        int x1 = (int)(x + coords[lineas[i * 2] * 3] * escala);
+        int y1 = (int)(y - coords[lineas[i * 2] * 3 + 1] * escala);
+        int x2 = (int)(x + coords[lineas[i * 2 + 1] * 3] * escala);
+        int y2 = (int)(y - coords[lineas[i * 2 + 1] * 3 + 1] * escala);
+        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
+}
 
-    while (1) {
-        float *coordenadas = NULL;
-        size_t ncoordenadas = 0;
-        size_t *lineas = NULL;
-        size_t nlineas = 0;
-        char etiqueta[maxlong + 1];
-        if (!leer_modelo_3d(f, maxlong, etiqueta, &ncoordenadas, &coordenadas,
-                            &nlineas, &lineas))
-            break;
-
-        modelo_t *m = modelo_crear(etiqueta, coordenadas, ncoordenadas, lineas, nlineas);
-        free(coordenadas);
-        free(lineas);
-        if (m != NULL && !lista_insertar_ultimo(lista, m))
-            modelo_destruir(m);
+static void mi_dibujar_texto_hud(SDL_Renderer *renderer, lista_t *lista, const char *texto, float x, float y, float escala) {
+    float offset_x = 0;
+    for (size_t i = 0; texto[i] != '\0'; i++) {
+        char etiqueta[2] = { texto[i], '\0' };
+        const modelo_t *char_mod = modelo_buscar(lista, etiqueta);
+        if (char_mod) mi_dibujar_modelo_2d(renderer, char_mod, x + offset_x, y, escala);
+        offset_x += 25.0f * escala;
     }
-    fclose(f);
-    return !lista_esta_vacia(lista);
 }
 
-// Construye la matriz de cámara del enunciado:
-// Mper · Mz(π/2 + angz) · My(π/2 − angx) · Mz(−phi) · Mt(−x, −y, −3)
-static matriz_t *camara_crear(float angz, float angx, float phi, float x, float y) {
-    matriz_t *cam = matriz_crear_mper(4);
-    const float traslacion[3] = {-x, -y, -3.0f};
-    matriz_t *pasos[4];
-    pasos[0] = matriz_crear_mz((float)M_PI / 2 + angz);
-    pasos[1] = matriz_crear_my((float)M_PI / 2 - angx);
-    pasos[2] = matriz_crear_mz(-phi);
-    pasos[3] = matriz_crear_mt(traslacion);
+static void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const float mv[4][4]) {
+    if (!mod) return;
+    const float *coords = modelo_coordenadas(mod);
+    const size_t *lineas = modelo_lineas(mod);
+    size_t nlineas = modelo_nlineas(mod);
+    float c = cosf(phi + rot_add), s = sinf(phi + rot_add);
 
-    for (int i = 0; i < 4; i++) {
-        matriz_t *tmp = matriz_multiplicar(cam, pasos[i]);
-        matriz_destruir(cam);
-        matriz_destruir(pasos[i]);
-        cam = tmp;
+    for (size_t i = 0; i < nlineas; i++) {
+        size_t i1 = lineas[i * 2], i2 = lineas[i * 2 + 1];
+        float wx1 = coords[i1 * 3] * c - coords[i1 * 3 + 1] * s + x;
+        float wy1 = coords[i1 * 3] * s + coords[i1 * 3 + 1] * c + y;
+        float wz1 = coords[i1 * 3 + 2];
+        float wx2 = coords[i2 * 3] * c - coords[i2 * 3 + 1] * s + x;
+        float wy2 = coords[i2 * 3] * s + coords[i2 * 3 + 1] * c + y;
+        float wz2 = coords[i2 * 3 + 2];
+
+        float vx1 = wx1 * mv[0][0] + wy1 * mv[0][1] + wz1 * mv[0][2] + mv[0][3];
+        float vy1 = wx1 * mv[1][0] + wy1 * mv[1][1] + wz1 * mv[1][2] + mv[1][3];
+        float vz1 = wx1 * mv[2][0] + wy1 * mv[2][1] + wz1 * mv[2][2] + mv[2][3];
+        float vx2 = wx2 * mv[0][0] + wy2 * mv[0][1] + wz2 * mv[0][2] + mv[0][3];
+        float vy2 = wx2 * mv[1][0] + wy2 * mv[1][1] + wz2 * mv[1][2] + mv[1][3];
+        float vz2 = wx2 * mv[2][0] + wy2 * mv[2][1] + wz2 * mv[2][2] + mv[2][3];
+
+        if (vz1 <= 0.2f || vz2 <= 0.2f) continue;
+        int px1 = (int)((vx1 / vz1) * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
+        int py1 = (int)(VENTANA_ALTO / 2 - (vy1 / vz1) * (VENTANA_ALTO / 2));
+        int px2 = (int)((vx2 / vz2) * (VENTANA_ANCHO / 2) + (VENTANA_ANCHO / 2));
+        int py2 = (int)(VENTANA_ALTO / 2 - (vy2 / vz2) * (VENTANA_ALTO / 2));
+        SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
     }
-    return cam;
 }
-
-static void punto_a_pantalla(float x, float y, int *sx, int *sy) {
-    *sx = (int)(x * VENTANA_ALTO / 2 + VENTANA_ANCHO / 2);
-    *sy = (int)(VENTANA_ALTO / 2 - y * VENTANA_ALTO / 2);
-}
-
-// Dibuja un modelo en (x, y, z) rotado 'rot' alrededor de Z, usando la
-// cámara que está en el tope de la pila. Las líneas que cruzan el plano
-// w = 1 se recortan interpolando en coordenadas homogéneas.
-static void render_modelo(SDL_Renderer *renderer, pila_t *pila, const modelo_t *m,
-                          float x, float y, float z, float rot) {
-    if (m == NULL) return;
-
-    float tv[3] = {x, y, z};
-    matriz_t *mt = matriz_crear_mt(tv);
-    matriz_t *mr = matriz_crear_mz(rot);
-    matriz_t *obj = matriz_multiplicar(mt, mr);
-    matriz_t *final = matriz_multiplicar(pila_ver_tope(pila), obj);
-    matriz_destruir(mt);
-    matriz_destruir(mr);
-    matriz_destruir(obj);
-    pila_apilar(pila, final);
-
-    const float *c = modelo_coordenadas(m);
-    const size_t *l = modelo_lineas(m);
-    size_t nv = modelo_ncoordenadas(m);
-    size_t nl = modelo_nlineas(m);
-
-    matriz_t *pts = _matriz_crear(nv, 3);
-    if (pts != NULL) {
-        for (size_t k = 0; k < nv; k++) {
-            matriz_establecer(pts, k, 0, c[3 * k]);
-            matriz_establecer(pts, k, 1, c[3 * k + 1]);
-            matriz_establecer(pts, k, 2, c[3 * k + 2]);
-        }
-
-        matriz_t *proj = matriz_aplicar(pila_ver_tope(pila), pts);
-        if (proj != NULL) {
-            for (size_t j = 0; j < 2 * nl; j += 2) {
-                size_t i0 = l[j], i1 = l[j + 1];
-                float w0 = matriz_obtener(proj, i0, 2);
-                float w1 = matriz_obtener(proj, i1, 2);
-                if (w0 < 1.0f && w1 < 1.0f) continue;
-
-                // Coordenadas homogéneas (x·w) para poder recortar en w = 1
-                float xh0 = matriz_obtener(proj, i0, 0) * w0;
-                float yh0 = matriz_obtener(proj, i0, 1) * w0;
-                float xh1 = matriz_obtener(proj, i1, 0) * w1;
-                float yh1 = matriz_obtener(proj, i1, 1) * w1;
-
-                if (w0 < 1.0f) {
-                    float t = (1.0f - w0) / (w1 - w0);
-                    xh0 += t * (xh1 - xh0);
-                    yh0 += t * (yh1 - yh0);
-                    w0 = 1.0f;
-                } else if (w1 < 1.0f) {
-                    float t = (1.0f - w1) / (w0 - w1);
-                    xh1 += t * (xh0 - xh1);
-                    yh1 += t * (yh0 - yh1);
-                    w1 = 1.0f;
-                }
-
-                int sx0, sy0, sx1, sy1;
-                punto_a_pantalla(xh0 / w0, yh0 / w0, &sx0, &sy0);
-                punto_a_pantalla(xh1 / w1, yh1 / w1, &sx1, &sy1);
-                SDL_RenderDrawLine(renderer, sx0, sy0, sx1, sy1);
-            }
-            matriz_destruir(proj);
-        }
-        matriz_destruir(pts);
-    }
-    matriz_destruir(pila_desapilar(pila));
-}
-
-// Tabla de búsqueda del display de 7 segmentos (A B C D E F G por dígito)
-static const bool DIGITO_SEGMENTOS[10][7] = {
-    {1, 1, 1, 1, 1, 1, 0}, // 0
-    {0, 1, 1, 0, 0, 0, 0}, // 1
-    {1, 1, 0, 1, 1, 0, 1}, // 2
-    {1, 1, 1, 1, 0, 0, 1}, // 3
-    {0, 1, 1, 0, 0, 1, 1}, // 4
-    {1, 0, 1, 1, 0, 1, 1}, // 5
-    {1, 0, 1, 1, 1, 1, 1}, // 6
-    {1, 1, 1, 0, 0, 0, 0}, // 7
-    {1, 1, 1, 1, 1, 1, 1}, // 8
-    {1, 1, 1, 1, 0, 1, 1}, // 9
-};
-
-static void dibujar_digito(SDL_Renderer *r, int x, int y, int s, int d) {
-    // Extremos de cada segmento en unidades de 's' (dígito de s x 2s)
-    static const int SEG[7][4] = {
-        {0, 0, 1, 0}, // A: arriba
-        {1, 0, 1, 1}, // B: derecha arriba
-        {1, 1, 1, 2}, // C: derecha abajo
-        {0, 2, 1, 2}, // D: abajo
-        {0, 1, 0, 2}, // E: izquierda abajo
-        {0, 0, 0, 1}, // F: izquierda arriba
-        {0, 1, 1, 1}, // G: medio
-    };
-    for (int i = 0; i < 7; i++)
-        if (DIGITO_SEGMENTOS[d][i])
-            SDL_RenderDrawLine(r, x + SEG[i][0] * s, y + SEG[i][1] * s,
-                               x + SEG[i][2] * s, y + SEG[i][3] * s);
-}
-
-// Dibuja un número alineado a la derecha en x_derecha.
-static void dibujar_numero(SDL_Renderer *r, int x_derecha, int y, int s, int n) {
-    if (n < 0) n = 0;
-    int x = x_derecha;
-    do {
-        x -= 2 * s;
-        dibujar_digito(r, x, y, s, n % 10);
-        n /= 10;
-    } while (n > 0);
-}
-
-
-
-// END código del alumno (funciones auxiliares)
+// END código del alumno
 
 int main(int argc, char *argv[]) {
-    (void)argc; (void)argv;
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window;
@@ -225,266 +97,173 @@ int main(int argc, char *argv[]) {
 
     // BEGIN código del alumno
     srand((unsigned int)time(NULL));
-
-    lista_t *lista_modelos = lista_crear();
-    if (lista_modelos == NULL) return 1;
-    if (!cargar_modelos(lista_modelos, "modelos.stl"))
-        fprintf(stderr, "ADVERTENCIA: no se pudieron cargar modelos de modelos.stl\n");
-
-    const modelo_t *modelo_tanque = modelo_buscar(lista_modelos, "TANQUE");
-    const modelo_t *modelo_torreta = modelo_buscar(lista_modelos, "TORRETA");
-    const modelo_t *modelo_radar = modelo_buscar(lista_modelos, "RADAR");
-    const modelo_t *modelo_misil = modelo_buscar(lista_modelos, "MISIL");
-    const modelo_t *modelo_horizonte = modelo_buscar(lista_modelos, "HORIZONTE");
-    const modelo_t *modelo_montanas = modelo_buscar(lista_modelos, "MONTANAS");
-    const modelo_t *modelo_luna = modelo_buscar(lista_modelos, "LUNA");
-
-    mundo_t *mundo = mundo_crear(lista_modelos);
-    animacion_t *anim_cristal = animacion_crear();
-    animacion_t *anim_explosion = animacion_crear();
-    pila_t *stack = pila_crear();
-    matriz_t *ident = matriz_crear_identidad(4);
-    if (mundo == NULL || anim_cristal == NULL || anim_explosion == NULL ||
-        stack == NULL || ident == NULL) {
-        fprintf(stderr, "ERROR: no se pudo inicializar el juego\n");
+    FILE *f_stl = fopen("modelos.stl", "rb");
+    if (!f_stl) {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
         return 1;
     }
-    pila_apilar(stack, ident);
+    unidades_t un; size_t ml;
+    leer_encabezado_stl(f_stl);
+    leer_formato_STL(f_stl, &un, &ml);
 
-    unsigned int prev_ticks = SDL_GetTicks();
-    float angx = 0, angz = 0;
-    float tiempo_fin = 0;
+    lista_t *lista_modelos = lista_crear();
+    while (!feof(f_stl)) {
+        char et[256]; size_t nc, nl; float *cc = NULL; size_t *ll = NULL;
+        if (leer_modelo_3d(f_stl, ml, et, &nc, &cc, &nl, &ll)) {
+            modelo_t *m = modelo_crear(et, cc, nc, ll, nl);
+            if (m) lista_insertar_ultimo(lista_modelos, m);
+            free(cc); free(ll);
+        } else break;
+    }
+    fclose(f_stl);
+
+    mundo_t *mundo = mundo_crear(lista_modelos);
+    lista_t *an_enemigos = lista_crear();
+    animacion_cristales_t *cristales = NULL;
+    float dt = 1.0f / JUEGO_FPS; // Al ser FPS fijos, el delta de simulación es constante
     // END código del alumno
 
     unsigned int ticks = SDL_GetTicks();
-    int done = 0;
-    while (!done) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                done = 1;
+    while(1) {
+        if(SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT)
                 break;
-            }
 
             // BEGIN código del alumno
-            if (event.type == SDL_KEYDOWN && !mundo_terminado(mundo)) {
+            if (event.type == SDL_KEYDOWN) {
                 tanque_t *jugador = mundo_jugador(mundo);
-                switch (event.key.keysym.sym) {
-                    case SDLK_UP:
-                        tanque_iniciar_movimiento(jugador, MOV_ADELANTE);
-                        break;
-                    case SDLK_DOWN:
-                        tanque_iniciar_movimiento(jugador, MOV_ATRAS);
-                        break;
-                    case SDLK_RIGHT:
-                        tanque_iniciar_movimiento(jugador, MOV_GIRAR_DER);
-                        break;
-                    case SDLK_LEFT:
-                        tanque_iniciar_movimiento(jugador, MOV_GIRAR_IZQ);
-                        break;
-                    case ' ':
-                        if (tanque_puede_disparar(jugador))
-                            tanque_disparar(jugador);
-                        break;
+                switch(event.key.keysym.sym) {
+                    case SDLK_UP:    tanque_iniciar_movimiento(jugador, MOV_ADELANTE); break;
+                    case SDLK_DOWN:  tanque_iniciar_movimiento(jugador, MOV_ATRAS);    break;
+                    case SDLK_LEFT:  tanque_iniciar_movimiento(jugador, MOV_GIRAR_IZQ); break;
+                    case SDLK_RIGHT: tanque_iniciar_movimiento(jugador, MOV_GIRAR_DER); break;
+                    case SDLK_SPACE: tanque_disparar(jugador);                         break;
                 }
             }
             // END código del alumno
+
+            continue;
         }
-        if (done) break;
 
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
         SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
 
         // BEGIN código del alumno
-        float dt = (SDL_GetTicks() - prev_ticks) / 1000.0f;
-        if (dt > 0.1f) dt = 0.1f;
-        prev_ticks = SDL_GetTicks();
+        // 1. Actualización lógica fija por cuadro
+        mundo_actualizar(mundo, dt);
 
+        if (mundo_evento_jugador_impactado(mundo)) {
+            if (cristales) animacion_cristales_destruir(cristales);
+            cristales = animacion_cristales_crear(35);
+        }
+        float ex, ey;
+        if (mundo_evento_enemigo_destruido(mundo, &ex, &ey)) {
+            const modelo_t *me = modelo_buscar(lista_modelos, "ENEMIGO");
+            if (!me) me = modelo_buscar(lista_modelos, "TANQUE");
+            animacion_enemigo_t *ae = animacion_enemigo_crear(me, ex, ey);
+            if (ae) lista_insertar_ultimo(an_enemigos, ae);
+        }
+        if (cristales) {
+            if (!animacion_cristales_actualizar(cristales, dt)) {
+                animacion_cristales_destruir(cristales); cristales = NULL;
+            }
+        }
+        lista_iter_t *it = lista_iter_crear(an_enemigos);
+        while (!lista_iter_al_final(it)) {
+            if (!animacion_enemigo_actualizar(lista_iter_ver_actual(it), dt)) {
+                animacion_enemigo_destruir(lista_iter_ver_actual(it));
+                lista_iter_borrar(it);
+            } else lista_iter_avanzar(it);
+        }
+        lista_iter_destruir(it);
+
+        // 2. Renderizado 3D
         tanque_t *jugador = mundo_jugador(mundo);
-        tanque_t *enemigo = mundo_enemigo(mundo);
+        float jx = tanque_x(jugador), jy = tanque_y(jugador), jphi = tanque_phi(jugador);
+        float mv[4][4];
+        matriz_computar_afinidad_camara(jx, jy, jphi, mv);
 
-        // Sacudida de la cámara mientras el tanque se mueve, con
-        // decaimiento para que no derive con el tiempo
-        movimiento_e mov = tanque_movimiento(jugador);
-        if (mov == MOV_GIRAR_IZQ || mov == MOV_GIRAR_DER)
-            angz += ((rand() % 2001) - 1000) / 100000.0f;
-        else if (mov != MOV_NINGUNO)
-            angx += ((rand() % 2001) - 1000) / 100000.0f;
-        angx -= angx * 2.0f * dt;
-        angz -= angz * 2.0f * dt;
+        SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255);
+        const modelo_t *mt = modelo_buscar(lista_modelos, "MONTAÑAS");
+        if (!mt) mt = modelo_buscar(lista_modelos, "MONTANIAS");
+        if (mt) mi_dibujar_modelo_3d(renderer, mt, jx, jy, 0, 0, mv);
 
-        if (!mundo_terminado(mundo))
-            mundo_actualizar(mundo, dt);
-        enemigo = mundo_enemigo(mundo); // pudo haber sido reemplazado
-
-        // Eventos del mundo -> animaciones
-        float ev_x, ev_y;
-        if (mundo_evento_enemigo_destruido(mundo, &ev_x, &ev_y))
-            animacion_iniciar_explosion(anim_explosion, ev_x, ev_y);
-        if (mundo_evento_jugador_impactado(mundo))
-            animacion_iniciar_cristal(anim_cristal);
-        animacion_actualizar(anim_cristal, dt);
-        animacion_actualizar(anim_explosion, dt);
-
-        float px = tanque_x(jugador), py = tanque_y(jugador);
-        float pp = tanque_phi(jugador);
-
-        // Fondo: cámara que solo rota (el horizonte no se traslada)
-        matriz_t *cam_fondo = camara_crear(angz, angx, pp, 0, 0);
-        pila_apilar(stack, cam_fondo);
-        SDL_SetRenderDrawColor(renderer, 0x80, 0x80, 0x80, 0x00);
-        render_modelo(renderer, stack, modelo_horizonte, 0, 0, 0, 0);
-        SDL_SetRenderDrawColor(renderer, 0x40, 0x40, 0x40, 0x00);
-        render_modelo(renderer, stack, modelo_montanas, 0, 0, 0, 0);
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xCC, 0x00);
-        render_modelo(renderer, stack, modelo_luna, 0, 0, 0, 0);
-        matriz_destruir(pila_desapilar(stack));
-
-        // Mundo: cámara completa
-        matriz_t *cam = camara_crear(angz, angx, pp, px, py);
-        pila_apilar(stack, cam);
-
-        // Obstáculos (blanco)
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
-        for (size_t i = 0; i < mundo_num_obstaculos(mundo); i++) {
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+        size_t nobst = mundo_num_obstaculos(mundo);
+        for (size_t i = 0; i < nobst; i++) {
             obstaculo_t *o = mundo_obstaculo(mundo, i);
-            render_modelo(renderer, stack, obstaculo_modelo(o),
-                          obstaculo_x(o), obstaculo_y(o), 0.0f, obstaculo_phi(o));
+            mi_dibujar_modelo_3d(renderer,  obstaculo_modelo(o), obstaculo_x(o), obstaculo_y(o),  obstaculo_phi(o), 0, mv);
         }
-
-        // Tanque enemigo: casco + torreta + radar
-        if (enemigo != NULL) {
-            float ex = tanque_x(enemigo), ey = tanque_y(enemigo);
-            float ep = tanque_phi(enemigo), et = tanque_torreta(enemigo);
-
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0x00);
-            render_modelo(renderer, stack, modelo_tanque, ex, ey, 0.0f, ep);
-
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0x80, 0x00, 0x00);
-            render_modelo(renderer, stack, modelo_torreta, ex, ey, 3.0f, ep + et);
-
-            if (modelo_radar != NULL) {
-                float radar_x = ex + (-1.5f) * cosf(ep + et);
-                float radar_y = ey + (-1.5f) * sinf(ep + et);
-                SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0x00, 0x00);
-                render_modelo(renderer, stack, modelo_radar, radar_x, radar_y,
-                              3.5f, ep + et);
+        tanque_t *enemigo = mundo_enemigo(mundo);
+        if (enemigo) {
+            const modelo_t *me = modelo_buscar(lista_modelos, "ENEMIGO");
+            if (!me) me = modelo_buscar(lista_modelos, "TANQUE");
+            mi_dibujar_modelo_3d(renderer, me, tanque_x(enemigo), tanque_y(enemigo), tanque_phi(enemigo), tanque_torreta(enemigo), mv);
+            if (tanque_misil_activo(enemigo)) {
+                const modelo_t *mm = modelo_buscar(lista_modelos, "MISIL");
+                if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(enemigo), tanque_misil_y(enemigo), tanque_misil_phi(enemigo), 0, mv);
             }
         }
-
-        // Misiles en vuelo
         if (tanque_misil_activo(jugador)) {
-            SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0x00);
-            render_modelo(renderer, stack, modelo_misil, tanque_misil_x(jugador),
-                          tanque_misil_y(jugador), 0.0f, tanque_misil_phi(jugador));
+            const modelo_t *mm = modelo_buscar(lista_modelos, "MISIL");
+            if (mm) mi_dibujar_modelo_3d(renderer, mm, tanque_misil_x(jugador), tanque_misil_y(jugador), tanque_misil_phi(jugador), 0, mv);
         }
-        if (enemigo != NULL && tanque_misil_activo(enemigo)) {
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0x00);
-            render_modelo(renderer, stack, modelo_misil, tanque_misil_x(enemigo),
-                          tanque_misil_y(enemigo), 0.0f, tanque_misil_phi(enemigo));
+        it = lista_iter_crear(an_enemigos);
+        while (!lista_iter_al_final(it)) {
+            animacion_enemigo_dibujar(lista_iter_ver_actual(it), renderer, mv, VENTANA_ANCHO, VENTANA_ALTO);
+            lista_iter_avanzar(it);
         }
+        lista_iter_destruir(it);
 
-        // Piezas del enemigo destruido (tiro oblicuo)
-        if (animacion_activa(anim_explosion)) {
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0x80, 0x00, 0x00);
-            for (size_t i = 0; i < EXPLOSION_PIEZAS; i++) {
-                float ax, ay, az, arot;
-                if (!animacion_pieza_posicion(anim_explosion, i, &ax, &ay, &az, &arot))
-                    continue;
-                render_modelo(renderer, stack,
-                              modelo_buscar(lista_modelos,
-                                            animacion_pieza_modelo(anim_explosion, i)),
-                              ax, ay, az, arot);
-            }
+        // 3. Renderizado del HUD 2D
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+        char str_pts[32]; sprintf(str_pts, "%06d", mundo_puntaje(mundo));
+        mi_dibujar_texto_hud(renderer, lista_modelos, str_pts, 40.0f, 50.0f, 1.2f);
+
+        int vidas = mundo_vidas(mundo); float px_v = 40.0f;
+        for (int v = 0; v < vidas; v++) {
+            const modelo_t *vm = modelo_buscar(lista_modelos, "*");
+            if (vm) mi_dibujar_modelo_2d(renderer, vm, px_v, (float)(VENTANA_ALTO - 50), 0.4f);
+            px_v += 25.0f;
         }
-
-        matriz_destruir(pila_desapilar(stack));
-
-// ---- HUD ----
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0x00);
-
-        // 1. Vidas restantes con el modelo '*' (sin incluir la actual)
-        const modelo_t *modelo_vida = modelo_buscar(lista_modelos, "*");
-        if (modelo_vida != NULL) {
-            float x_vida = -0.9f; // Coordenadas de pantalla normalizadas si render_modelo escala a HUD
-            float y_vida = 0.8f;  // Ajustá estos valores si sale corrido de la pantalla
-            for (int i = 0; i < (mundo_vidas(mundo) - 1); i++) {
-                render_modelo(renderer, stack, modelo_vida, x_vida, y_vida, 0.0f, 0.0f);
-                x_vida += 0.1f; // Espaciado
-            }
+        if (enemigo) {
+            float obj = atan2f(tanque_y(enemigo) - jy, tanque_x(enemigo) - jx);
+            float err = obj - jphi;
+            while (err > M_PI) err -= 2 * M_PI;
+            while (err <= -M_PI) err += 2 * M_PI;
+            const modelo_t *mm = (fabsf(err) <= 0.15f) ? modelo_buscar(lista_modelos, "+") : modelo_buscar(lista_modelos, "-");
+            if (mm) mi_dibujar_modelo_2d(renderer, mm, (float)(VENTANA_ANCHO / 2), (float)(VENTANA_ALTO / 2), 1.0f);
+        } else {
+            const modelo_t *mm = modelo_buscar(lista_modelos, "-");
+            if (mm) mi_dibujar_modelo_2d(renderer, mm, (float)(VENTANA_ANCHO / 2), (float)(VENTANA_ALTO / 2), 1.0f);
         }
-
-        // 2. Puntaje
-        dibujar_numero(renderer, VENTANA_ANCHO - 30, 20, 10, mundo_puntaje(mundo));
-
-        // 3. Mira del tanque con '+' o '-' según puntería
-        bool enemigo_en_mira = false;
-        float rumbo_error = 0;
-        if (enemigo != NULL) {
-            float dx = tanque_x(enemigo) - px, dy = tanque_y(enemigo) - py;
-            float dist = sqrtf(dx * dx + dy * dy); // Se usa acá para el alcance del misil
-            rumbo_error = normalizar_angulo(atan2f(dy, dx) - pp);
-            enemigo_en_mira = fabsf(rumbo_error) < 0.15f && dist <= ALCANCE_MISIL;
-        }
-
-        const modelo_t *modelo_mira = modelo_buscar(lista_modelos, enemigo_en_mira ? "+" : "-");
-        if (modelo_mira != NULL) {
-            // Se dibuja en el centro (0,0) de la pantalla
-            render_modelo(renderer, stack, modelo_mira, 0.0f, 0.0f, 0.0f, 0.0f);
-        }
-
-        // 4. Indicador de dirección del enemigo cuando queda fuera de la vista (> 1 rad)
-        if (enemigo != NULL && fabsf(rumbo_error) > 1.0f) {
-            // Si tenés funciones de texto de la cátedra podés descomentar y usarlas acá:
-            if (rumbo_error >= 1.0f && rumbo_error <= 2.44f) {
-                // "IZQUIERDA"
-            } else if (rumbo_error <= -1.0f && rumbo_error >= -2.44f) {
-                // "DERECHA"
-            } else if (fabsf(rumbo_error) > 2.44f) {
-                // "DETRAS"
-            }
-        }
-
-
-// 5. Vidrio roto animado en 2D encima de todo
-        // //beggin codigo alumno
-        if (animacion_activa(anim_cristal)) {
-            // Renderiza las fisuras directamente escaladas en el centro de la escena 2D
-            renderizar_cristal_2d(anim_cristal, 350.0f, lista_modelos, renderer);
-        }
-
-        // Fin del juego: al finalizar la animación de impacto, se imprime estáticamente el cartel
-        if (mundo_terminado(mundo) && !animacion_activa(anim_cristal)) {
-            tiempo_fin += dt;
-            if (tiempo_fin > 1.5f) {
-                unsigned char rojo[3] = {255, 0, 0};
-                float pos_game_over[2] = {330.0f, 360.0f}; // Centrado óptimo en pantalla
-                
-                // Dibuja el cartel vectorialmente utilizando los tipos nativos del STL
-                imprimir_cadena_2d("GAME OVER", 20.0f, pos_game_over, 40.0f, rojo, lista_modelos, renderer);
-            }
-        }
+        if (cristales) animacion_cristales_dibujar(cristales, renderer, VENTANA_ANCHO / 2, VENTANA_ALTO / 2);
+        if (mundo_terminado(mundo)) mi_dibujar_texto_hud(renderer, lista_modelos, "GAME OVER", (float)(VENTANA_ANCHO / 2 - 100), (float)(VENTANA_ALTO / 2 + 50), 1.5f);
         // END código del alumno
 
         SDL_RenderPresent(renderer);
         ticks = SDL_GetTicks() - ticks;
-        if (dormir) {
+        if(dormir) {
             SDL_Delay(dormir);
             dormir = 0;
-        } else if (ticks < 1000 / JUEGO_FPS)
+        }
+        else if(ticks < 1000 / JUEGO_FPS)
             SDL_Delay(1000 / JUEGO_FPS - ticks);
         else
             printf("Perdiendo cuadros\n");
         ticks = SDL_GetTicks();
     }
 
-    // El juego solo llega acá cuando el usuario decide salir (por ejemplo, cerrando la ventana o tocando ESC)
     // BEGIN código del alumno
-    animacion_destruir(anim_cristal);
-    animacion_destruir(anim_explosion);
+    if (cristales) animacion_cristales_destruir(cristales);
+    while (!lista_esta_vacia(an_enemigos)) animacion_enemigo_destruir(lista_borrar_primero(an_enemigos));
+    lista_destruir(an_enemigos, NULL);
+    while (!lista_esta_vacia(lista_modelos)) modelo_destruir(lista_borrar_primero(lista_modelos));
+    lista_destruir(lista_modelos, NULL);
     mundo_destruir(mundo);
-    matriz_destruir(pila_desapilar(stack)); // identidad apilada al inicio
-    pila_destruir(stack, NULL);
-    lista_destruir(lista_modelos, destruir_modelo_void);
     // END código del alumno
 
     SDL_DestroyRenderer(renderer);

@@ -1,6 +1,4 @@
 #include "animaciones.h"
-#include "matriz.h"
-#include "modelo.h"
 #include <stdlib.h>
 #include <math.h>
 
@@ -8,230 +6,216 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define CRISTAL_DURACION_TRAZADO 1.35f 
-#define CRISTAL_DURACION_TOTAL 2.5f
-#define EXPLOSION_TIMEOUT 5.0f
-#define GRAVEDAD 9.81f
-#define PIEZA_VEL_HORIZONTAL 5.0f  
-#define PIEZA_VEL_VERTICAL 10.0f     
-#define PIEZA_ALTURA_INICIAL 3.0f
-
+// Estructura interna para los cristales rotos (2D en espacio de pantalla)
 typedef struct {
-    float dist;      // Distancia horizontal recorrida desde el centro
-    float z, vz;     // Altura y velocidad vertical (tiro oblicuo)
-    float ang;       // Dirección de eyección 
-    float rot, vrot; // Rotación propia acumulada y su velocidad
-    bool en_suelo;
-} pieza_t;
+    float x, y;
+    float vx, vy;
+    float rot;
+    float v_rot;
+    float tam;
+} cristal_t;
 
-typedef struct {
-    float x0, y0, x1, y1;
-} linea_t;
-
-struct animacion {
-    anim_tipo_t tipo;
-    bool activa;
+struct animacion_cristales {
+    cristal_t *particulas;
+    size_t cant;
     float tiempo;
-
-    // Cristal del jugador
-    linea_t lineas[CRISTAL_LINEAS];
-    size_t visibles;
-
-    // Explosión del enemigo
-    float cx, cy; 
-    pieza_t piezas[EXPLOSION_PIEZAS];
 };
 
-static const char *PIEZA_MODELOS[EXPLOSION_PIEZAS] = {
-    "TORRETA", "RADAR", "RESTO1", "RESTO1", "RESTO2", "RESTO2"
-};
+animacion_cristales_t *animacion_cristales_crear(size_t cant) {
+    animacion_cristales_t *a = malloc(sizeof(animacion_cristales_t));
+    if (!a) return NULL;
+    a->particulas = malloc(sizeof(cristal_t) * cant);
+    if (!a->particulas) { free(a); return NULL; }
+    a->cant = cant;
+    a->tiempo = 0.0f;
 
-static float aleatorio(float min, float max) {
-    return min + (max - min) * (float)rand() / (float)RAND_MAX;
-}
-
-animacion_t *animacion_crear(void) {
-    animacion_t *a = calloc(1, sizeof(animacion_t));
-    if (a) a->tipo = ANIM_NINGUNA;
+    for (size_t i = 0; i < cant; i++) {
+        // Nacen en el centro de la pantalla o dispersos por el HUD
+        a->particulas[i].x = 0.0f;
+        a->particulas[i].y = 0.0f;
+        float angulo = ((float)rand() / RAND_MAX) * 2 * M_PI;
+        float velocidad = 150.0f + ((float)rand() / RAND_MAX) * 250.0f; // px/seg
+        a->particulas[i].vx = velocidad * cosf(angulo);
+        a->particulas[i].vy = velocidad * sinf(angulo);
+        a->particulas[i].rot = ((float)rand() / RAND_MAX) * 2 * M_PI;
+        a->particulas[i].v_rot = 3.0f + ((float)rand() / RAND_MAX) * 8.0f;
+        a->particulas[i].tam = 5.0f + ((float)rand() / RAND_MAX) * 12.0f;
+    }
     return a;
 }
 
-void animacion_destruir(animacion_t *a) {
+bool animacion_cristales_actualizar(animacion_cristales_t *a, float dt) {
+    if (!a) return false;
+    a->tiempo += dt;
+    if (a->tiempo > 1.2f) return false; // Dura 1.2 segundos
+
+    for (size_t i = 0; i < a->cant; i++) {
+        a->particulas[i].x += a->particulas[i].vx * dt;
+        a->particulas[i].y += a->particulas[i].vy * dt;
+        // Gravedad simulada en la pantalla hacia abajo
+        a->particulas[i].vy -= 300.0f * dt;
+        a->particulas[i].rot += a->particulas[i].v_rot * dt;
+    }
+    return true;
+}
+
+void animacion_cristales_dibujar(const animacion_cristales_t *a, SDL_Renderer *renderer, int centro_x, int centro_y) {
+    if (!a) return;
+    SDL_SetRenderDrawColor(renderer, 200, 240, 255, 255); // Color cian/cristal brillante
+    for (size_t i = 0; i < a->cant; i++) {
+        float cx = centro_x + a->particulas[i].x;
+        float cy = centro_y - a->particulas[i].y; // Invertir Y para coordenadas SDL
+        float r = a->particulas[i].tam;
+        float rot = a->particulas[i].rot;
+
+        // Dibujar un pequeño triángulo o rombo por partícula girando
+        int x1 = cx + r * cosf(rot);
+        int y1 = cy + r * sinf(rot);
+        int x2 = cx + r * cosf(rot + 2.0f * M_PI / 3.0f);
+        int y2 = cy + r * sinf(rot + 2.0f * M_PI / 3.0f);
+        int x3 = cx + r * cosf(rot + 4.0f * M_PI / 3.0f);
+        int y3 = cy + r * sinf(rot + 4.0f * M_PI / 3.0f);
+
+        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+        SDL_RenderDrawLine(renderer, x2, y2, x3, y3);
+        SDL_RenderDrawLine(renderer, x3, y3, x1, y1);
+    }
+}
+
+void animacion_cristales_destruir(animacion_cristales_t *a) {
+    if (!a) return;
+    free(a->particulas);
     free(a);
 }
 
-bool animacion_activa(const animacion_t *a) {
-    return a->activa;
-}
+// Estructura interna para fragmentos rotatorios 3D del enemigo destrozado
+typedef struct {
+    float x1, y1, z1;
+    float x2, y2, z2;
+    float bx, by, bz;     // Baricentro original de la arista
+    float vx, vy, vz;     // Velocidad de expansión
+    float rot_intrinseca; // Ángulo de rotación sobre su propio centro
+    float vel_rot;        // Velocidad angular
+} fragmento_t;
 
-anim_tipo_t animacion_tipo(const animacion_t *a) {
-    return a->tipo;
-}
+struct animacion_enemigo {
+    fragmento_t *fragmentos;
+    size_t cant;
+    float tiempo;
+    float orig_x, orig_y; // Posición de la explosión en el mundo
+};
 
-void animacion_iniciar_cristal(animacion_t *a) {
-    a->tipo = ANIM_CRISTAL;
-    a->activa = true;
-    a->tiempo = 0;
-    a->visibles = 0;
+animacion_enemigo_t *animacion_enemigo_crear(const modelo_t *mod, float x, float y) {
+    if (!mod) return NULL;
+    animacion_enemigo_t *a = malloc(sizeof(animacion_enemigo_t));
+    if (!a) return NULL;
 
-    for (size_t i = 0; i < CRISTAL_LINEAS; i++) {
-        float ang = aleatorio(-(float)M_PI, (float)M_PI);
-        float r0 = aleatorio(0.0f, 0.4f);
-        float r1 = r0 + aleatorio(0.2f, 1.0f);
-        a->lineas[i].x0 = r0 * cosf(ang);
-        a->lineas[i].y0 = r0 * sinf(ang);
-        a->lineas[i].x1 = r1 * cosf(ang + aleatorio(-0.3f, 0.3f));
-        a->lineas[i].y1 = r1 * sinf(ang + aleatorio(-0.3f, 0.3f));
-    }
-}
+    size_t nlineas = modelo_nlineas(mod);
+    a->fragmentos = malloc(sizeof(fragmento_t) * nlineas);
+    if (!a->fragmentos) { free(a); return NULL; }
+    a->cant = nlineas;
+    a->tiempo = 0.0f;
+    a->orig_x = x;
+    a->orig_y = y;
 
-void animacion_iniciar_explosion(animacion_t *a, float x, float y) {
-    a->tipo = ANIM_EXPLOSION;
-    a->activa = true;
-    a->tiempo = 0;
-    a->cx = x;
-    a->cy = y;
-
-    for (size_t i = 0; i < EXPLOSION_PIEZAS; i++) {
-        pieza_t *p = &a->piezas[i];
-        p->dist = 0;
-        p->z = PIEZA_ALTURA_INICIAL;
-        p->vz = PIEZA_VEL_VERTICAL;
-        p->ang = (float)i * 60.0f * (float)M_PI / 180.0f;
-        p->rot = 0;
-        p->vrot = aleatorio(-3.0f, 3.0f);
-        p->en_suelo = false;
-    }
-}
-
-void animacion_actualizar(animacion_t *a, float dt) {
-    if (!a->activa) return;
-    a->tiempo += dt;
-
-    if (a->tipo == ANIM_CRISTAL) {
-        float progreso = a->tiempo / CRISTAL_DURACION_TRAZADO;
-        if (progreso > 1) progreso = 1;
-        a->visibles = (size_t)(progreso * CRISTAL_LINEAS);
-
-        if (a->tiempo >= CRISTAL_DURACION_TOTAL) a->activa = false;
-    } else if (a->tipo == ANIM_EXPLOSION) {
-        bool todas_en_suelo = true;
-
-        for (size_t i = 0; i < EXPLOSION_PIEZAS; i++) {
-            pieza_t *p = &a->piezas[i];
-            if (p->en_suelo) continue;
-
-            p->dist += PIEZA_VEL_HORIZONTAL * dt;
-            p->vz -= GRAVEDAD * dt;
-            p->z += p->vz * dt;
-            p->rot += p->vrot * dt;
-
-            if (p->z <= 0) {
-                p->z = 0;
-                p->en_suelo = true;
-            } else {
-                todas_en_suelo = false;
-            }
-        }
-
-        if (todas_en_suelo || a->tiempo > EXPLOSION_TIMEOUT) a->activa = false;
-    }
-}
-
-size_t animacion_cristal_visibles(const animacion_t *a) {
-    if (!a->activa || a->tipo != ANIM_CRISTAL) return 0;
-    return a->visibles;
-}
-
-void animacion_cristal_linea(const animacion_t *a, size_t i,
-                             float *x0, float *y0, float *x1, float *y1) {
-    *x0 = a->lineas[i].x0;
-    *y0 = a->lineas[i].y0;
-    *x1 = a->lineas[i].x1;
-    *y1 = a->lineas[i].y1;
-}
-
-const char *animacion_pieza_modelo(const animacion_t *a, size_t i) {
-    (void)a;
-    return PIEZA_MODELOS[i];
-}
-
-bool animacion_pieza_posicion(const animacion_t *a, size_t i,
-                              float *x, float *y, float *z, float *rot) {
-    if (!a->activa || a->tipo != ANIM_EXPLOSION || i >= EXPLOSION_PIEZAS)
-        return false;
-
-    const pieza_t *p = &a->piezas[i];
-    *x = a->cx + p->dist * cosf(p->ang);
-    *y = a->cy + p->dist * sinf(p->ang);
-    *z = p->z;
-    *rot = p->rot;
-    return true;
-}
-
-// ============================================================================
-// IMPLEMENTACIÓN DE LA INFRAESTRUCTURA DE DIBUJO DIRECTO 2D
-// ============================================================================
-
-bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
-    char s[2] = {c, '\0'};
-    modelo_t* modelo = modelo_buscar(modelos, s);
-    if (modelo == NULL) return false;
-
-    // Conectamos directamente con los getters nativos de tu modelo.c
-    const float *coords = modelo_coordenadas(modelo);
-    const size_t *lineas = modelo_lineas(modelo);
-    size_t nlineas = modelo_nlineas(modelo);
-
-    SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 255);
+    const float *coords = modelo_coordenadas(mod);
+    const size_t *lineas = modelo_lineas(mod);
 
     for (size_t i = 0; i < nlineas; i++) {
-        size_t i0 = lineas[2 * i];
-        size_t i1 = lineas[2 * i + 1];
+        size_t idx1 = lineas[i * 2];
+        size_t idx2 = lineas[i * 2 + 1];
 
-        // Transformación geométrica directa a píxeles
-        float x0 = xy[0] + coords[3 * i0] * escala;
-        float y0 = xy[1] - coords[3 * i0 + 1] * escala; 
-        float x1 = xy[0] + coords[3 * i1] * escala;
-        float y1 = xy[1] - coords[3 * i1 + 1] * escala;
+        // Guardamos los vértices locales relativos al centro del tanque
+        a->fragmentos[i].x1 = coords[idx1 * 3];
+        a->fragmentos[i].y1 = coords[idx1 * 3 + 1];
+        a->fragmentos[i].z1 = coords[idx1 * 3 + 2];
 
-        SDL_RenderDrawLine(renderer, (int)x0, (int)y0, (int)x1, (int)y1);
+        a->fragmentos[i].x2 = coords[idx2 * 3];
+        a->fragmentos[i].y2 = coords[idx2 * 3 + 1];
+        a->fragmentos[i].z2 = coords[idx2 * 3 + 2];
+
+        // Calculamos el baricentro de la arista para saber la dirección de explosión
+        a->fragmentos[i].bx = (a->fragmentos[i].x1 + a->fragmentos[i].x2) / 2.0f;
+        a->fragmentos[i].by = (a->fragmentos[i].y1 + a->fragmentos[i].y2) / 2.0f;
+        a->fragmentos[i].bz = (a->fragmentos[i].z1 + a->fragmentos[i].z2) / 2.0f;
+
+        // Velocidad de expansión proporcional al baricentro + factor aleatorio
+        float factor = 5.0f + ((float)rand() / RAND_MAX) * 10.0f;
+        a->fragmentos[i].vx = a->fragmentos[i].bx * factor + (((float)rand() / RAND_MAX) - 0.5f) * 4.0f;
+        a->fragmentos[i].vy = a->fragmentos[i].by * factor + (((float)rand() / RAND_MAX) - 0.5f) * 4.0f;
+        a->fragmentos[i].vz = (a->fragmentos[i].bz + 1.0f) * factor;
+
+        a->fragmentos[i].rot_intrinseca = 0.0f;
+        a->fragmentos[i].vel_rot = 5.0f + ((float)rand() / RAND_MAX) * 15.0f; // rads/seg rápidos
     }
+    return a;
+}
 
+bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
+    if (!a) return false;
+    a->tiempo += dt;
+    if (a->tiempo > 2.0f) return false; // Dura 2 segundos estallando
+
+    for (size_t i = 0; i < a->cant; i++) {
+        // Desplazar el baricentro por la velocidad de expansión
+        a->fragmentos[i].bx += a->fragmentos[i].vx * dt;
+        a->fragmentos[i].by += a->fragmentos[i].vy * dt;
+        a->fragmentos[i].bz += a->fragmentos[i].vz * dt;
+        // Gravedad sobre los fragmentos en el espacio 3D
+        a->fragmentos[i].vz -= 9.8f * dt;
+
+        // Rotación intrínseca sobre sí misma
+        a->fragmentos[i].rot_intrinseca += a->fragmentos[i].vel_rot * dt;
+    }
     return true;
 }
 
-bool imprimir_cadena_2d(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
-    size_t i = 0;
-    for (i = 0; s[i] != '\0'; i++) {
-        if (!imprimir_caracter_2d(s[i], escala, xy, color, modelos, renderer)) {
-            return false;
-        }
-        xy[0] += incx; 
+void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const float matriz_vista[4][4], int width, int height) {
+    if (!a) return;
+    SDL_SetRenderDrawColor(renderer, 255, 69, 0, 255); // Color rojo/naranja fuego
+
+    for (size_t i = 0; i < a->cant; i++) {
+        // Obtener los extremos relativos a su propio baricentro dinámico
+        float lx1 = a->fragmentos[i].x1 - (a->fragmentos[i].x1 + a->fragmentos[i].x2)/2.0f;
+        float ly1 = a->fragmentos[i].y1 - (a->fragmentos[i].y1 + a->fragmentos[i].y2)/2.0f;
+        float lx2 = a->fragmentos[i].x2 - (a->fragmentos[i].x1 + a->fragmentos[i].x2)/2.0f;
+        float ly2 = a->fragmentos[i].y2 - (a->fragmentos[i].y1 + a->fragmentos[i].y2)/2.0f;
+
+        // Rotar de manera local/intrinseca cada vértice en el plano XY de la pieza antes de posicionarla
+        float c = cosf(a->fragmentos[i].rot_intrinseca);
+        float s = sinf(a->fragmentos[i].rot_intrinseca);
+
+        float rx1 = lx1 * c - ly1 * s + a->fragmentos[i].bx + a->orig_x;
+        float ry1 = lx1 * s + ly1 * c + a->fragmentos[i].by + a->orig_y;
+        float rz1 = a->fragmentos[i].z1 - (a->fragmentos[i].z1 + a->fragmentos[i].z2)/2.0f + a->fragmentos[i].bz;
+
+        float rx2 = lx2 * c - ly2 * s + a->fragmentos[i].bx + a->orig_x;
+        float ry2 = lx2 * s + ly2 * c + a->fragmentos[i].by + a->orig_y;
+        float rz2 = a->fragmentos[i].z2 - (a->fragmentos[i].z1 + a->fragmentos[i].z2)/2.0f + a->fragmentos[i].bz;
+
+        // Proyectar Vértice 1
+        float vx1 = rx1 * matriz_vista[0][0] + ry1 * matriz_vista[0][1] + rz1 * matriz_vista[0][2] + matriz_vista[0][3];
+        float vy1 = rx1 * matriz_vista[1][0] + ry1 * matriz_vista[1][1] + rz1 * matriz_vista[1][2] + matriz_vista[1][3];
+        float vz1 = rx1 * matriz_vista[2][0] + ry1 * matriz_vista[2][1] + rz1 * matriz_vista[2][2] + matriz_vista[2][3];
+
+        // Proyectar Vértice 2
+        float vx2 = rx2 * matriz_vista[0][0] + ry2 * matriz_vista[0][1] + rz2 * matriz_vista[0][2] + matriz_vista[0][3];
+        float vy2 = rx2 * matriz_vista[1][0] + ry2 * matriz_vista[1][1] + rz2 * matriz_vista[1][2] + matriz_vista[1][3];
+        float vz2 = rx2 * matriz_vista[2][0] + ry2 * matriz_vista[2][1] + rz2 * matriz_vista[2][2] + matriz_vista[2][3];
+
+        if (vz1 <= 0.1f || vz2 <= 0.1f) continue;
+
+        int px1 = (int)((vx1 / vz1) * (width / 2) + (width / 2));
+        int py1 = (int)(height / 2 - (vy1 / vz1) * (height / 2));
+        int px2 = (int)((vx2 / vz2) * (width / 2) + (width / 2));
+        int py2 = (int)(height / 2 - (vy2 / vz2) * (height / 2));
+
+        SDL_RenderDrawLine(renderer, px1, py1, px2, py2);
     }
-    xy[0] -= i * incx; 
-    return true;
 }
 
-bool renderizar_cristal_2d(animacion_t *a, float escala, lista_t *modelos, SDL_Renderer *renderer) {
-    if (!a->activa || a->tipo != ANIM_CRISTAL) return true;
-    (void)modelos;
-
-    unsigned char color[3] = {255, 255, 255}; 
-    size_t visibles = a->visibles;
-
-    for (size_t i = 0; i < visibles; i++) {
-        float x0, y0, x1, y1;
-        animacion_cristal_linea(a, i, &x0, &y0, &x1, &y1);
-
-        // Mapeo directo centrado en la resolución de pantalla (1024x768)
-        float pantalla_x0 = 512.0f + x0 * escala;
-        float pantalla_y0 = 384.0f - y0 * escala;
-        float pantalla_x1 = 512.0f + x1 * escala;
-        float pantalla_y1 = 384.0f - y1 * escala;
-
-        SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 255);
-        SDL_RenderDrawLine(renderer, (int)pantalla_x0, (int)pantalla_y0, (int)pantalla_x1, (int)pantalla_y1);
-    }
-    return true;
+void animacion_enemigo_destruir(animacion_enemigo_t *a) {
+    if (!a) return;
+    free(a->fragmentos);
+    free(a);
 }

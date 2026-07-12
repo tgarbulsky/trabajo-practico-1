@@ -1,53 +1,42 @@
 #ifndef ANIMACIONES_H
 #define ANIMACIONES_H
 
+#include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <SDL2/SDL.h>
-#include "lista.h"
-#include "matriz.h" // Inclusión necesaria para compatibilidad de tipos
+#include "modelo.h"
 
-#define CRISTAL_LINEAS 27
-#define EXPLOSION_PIEZAS 6
+// --- TDA Animación de Cristales Rotos (Efecto 2D sobre el HUD) ---
+typedef struct animacion_cristales animacion_cristales_t;
 
-typedef enum {
-    ANIM_NINGUNA,
-    ANIM_CRISTAL,   // Vidrio roto del jugador: 27 líneas en secuencia
-    ANIM_EXPLOSION  // Tiro oblicuo de las 6 piezas del enemigo destruido
-} anim_tipo_t;
+// Crea la animación de cristales rotos en pantalla con una cantidad dada de fragmentos.
+animacion_cristales_t *animacion_cristales_crear(size_t cant);
 
-// TDA Animación: Maneja la física y los tiempos de los efectos visuales.
-typedef struct animacion animacion_t;
+// Actualiza la posición y rotación de los cristales en base al tiempo delta (dt).
+// Devuelve false cuando la animación termina (cumple su tiempo de vida).
+bool animacion_cristales_actualizar(animacion_cristales_t *a, float dt);
 
-animacion_t *animacion_crear(void);
-void animacion_destruir(animacion_t *a);
+// Dibuja los cristales en coordenadas de pantalla alrededor de un centro dado (generalmente el centro de la pantalla).
+void animacion_cristales_dibujar(const animacion_cristales_t *a, SDL_Renderer *renderer, int centro_x, int centro_y);
 
-bool animacion_activa(const animacion_t *a);
-anim_tipo_t animacion_tipo(const animacion_t *a);
+// Libera la memoria del TDA de cristales.
+void animacion_cristales_destruir(animacion_cristales_t *a);
 
-// Arranca la animación de vidrio roto (genera las 27 rajaduras al azar).
-void animacion_iniciar_cristal(animacion_t *a);
 
-// Arranca la explosión del enemigo centrada en (x, y) del mundo
-void animacion_iniciar_explosion(animacion_t *a, float x, float y);
+// --- TDA Animación de Destrucción del Enemigo (Efecto 3D con Rotación Intrínseca) ---
+typedef struct animacion_enemigo animacion_enemigo_t;
 
-void animacion_actualizar(animacion_t *a, float dt);
+// Crea la animación de explosión 3D desarmando las aristas del modelo del enemigo en la posición (x, y) del mundo.
+animacion_enemigo_t *animacion_enemigo_crear(const modelo_t *mod, float x, float y);
 
-// Cristal: Cantidad de líneas ya visibles y sus extremos en coordenadas normalizadas [-1, 1].
-size_t animacion_cristal_visibles(const animacion_t *a);
-void animacion_cristal_linea(const animacion_t *a, size_t i,
-                             float *x0, float *y0, float *x1, float *y1);
+// Actualiza la expansión, gravedad y rotación sobre sí mismas de las piezas del tanque.
+// Devuelve false cuando la animación finaliza.
+bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt);
 
-// Explosión: Nombre del modelo de la pieza i y su posición/rotación en el mundo.
-const char *animacion_pieza_modelo(const animacion_t *a, size_t i);
-bool animacion_pieza_posicion(const animacion_t *a, size_t i,
-                              float *x, float *y, float *z, float *rot);
+// Proyecta en perspectiva 3D y dibuja cada fragmento rotando independientemente.
+void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const float matriz_vista[4][4], int width, int height);
 
-// ============================================================================
-// FUNCIONES DE RENDERIZADO GEOMÉTRICO DIRECTO 2D (HUD Y EFECTOS)
-// ============================================================================
-bool imprimir_caracter_2d(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
-bool imprimir_cadena_2d(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
-bool renderizar_cristal_2d(animacion_t *a, float escala, lista_t *modelos, SDL_Renderer *renderer);
+// Libera la memoria del TDA del enemigo destruido.
+void animacion_enemigo_destruir(animacion_enemigo_t *a);
 
 #endif // ANIMACIONES_H
