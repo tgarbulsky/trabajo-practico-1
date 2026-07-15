@@ -15,6 +15,9 @@
 #include "lista.h"
 #include "pila.h"
 #include "tanque.h"
+#include "misil.h"
+#include "interfaz2d.h"
+#include "obstaculo.h"
 
 // Macro para la ruta del archivo de modelos
 #define RUTA_STL "modelos.stl"
