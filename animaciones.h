@@ -10,6 +10,7 @@
 #include "lista.h"
 #include "mundo.h"
 
+#define T_ANIM 2
 // --- Gestión de la Pila de Transformaciones --- //
 
 /**
