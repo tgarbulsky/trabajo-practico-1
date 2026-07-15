@@ -14,6 +14,7 @@
 #include "modelo.h"
 #include "lista.h"
 #include "pila.h"
+#include "tanque.h"
 
 // Macro para la ruta del archivo de modelos
 #define RUTA_STL "modelos.stl"
