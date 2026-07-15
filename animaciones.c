@@ -141,7 +141,7 @@ void desapilar_cuadro_transformacion(pila_t* transformacion) {
 
 //--- Motor de Renderizado 3D --- //
 
-void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color, SDL_Renderer* renderer) {
+void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, color, color, color, 0x00);
     SDL_RenderDrawLine(renderer, 
         matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1),
