@@ -32,7 +32,7 @@ void desapilar_transformacion(pila_t* transformacion);
 
 
 //Apila una traslación de vector v seguida de una rotación en el eje Z de ángulo angz.
-bool apilar_rototraslacion(pila_t* transformacion, const float v[2], const float angz);
+bool apilar_rototraslacion(pila_t* transformacion, const float v[3], const float angz);
 
 
 //Desapila una rototraslación (elimina dos matrices de la pila).
