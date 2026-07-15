@@ -14,8 +14,8 @@
 
 /* --- Constantes y Tablas de Búsqueda --- */
 const float g = -9.81; 
-const float pos_rel_torreta[1] = {0, 0, 3}; 
-const float pos_rel_radar[1] = {-1.5, 0, 0.5}; 
+const float pos_rel_torreta = {0, 0, 3}; 
+const float pos_rel_radar = {-1.5, 0, 0.5}; 
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
@@ -25,7 +25,7 @@ const char* etiquetas[] = {
     [RESTO1]="RESTO1", [RESTO2]="RESTO2"
 };
 
-const unsigned char colores[][1] = {
+const unsigned char colores[] = {
     [TANQUE]={255, 255, 255}, [TORRETA]={255, 255, 255}, [RADAR]={255, 255, 255},
     [MISIL]={255, 0, 0}, [CUBO1]={0, 255, 0}, [CUBO2]={0, 255, 0}, [CUBO3]={0, 255, 0},
     [PIRAMIDE1]={0, 255, 0}, [PIRAMIDE2]={0, 255, 0}, [PIRAMIDE3]={0, 255, 0},
@@ -100,7 +100,7 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
         return false;
     }
 
-    float pos_inv[1] = {-1 * tanque->pos, -1 * tanque->pos[2], -3};
+    float pos_inv[3] = {-1 * tanque->pos, -1 * tanque->pos[2], -3};
     matriz_t* tanque_pos = matriz_crear_tras(pos_inv);
     if (tanque_pos == NULL || !apilar_transformacion(transformacion, tanque_pos)) {
         desapilar_transformacion(transformacion); desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
@@ -115,25 +115,25 @@ void desapilar_cuadro_transformacion(pila_t* transformacion) {
 
 /* --- Motor de Renderizado 3D --- */
 
-void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[1], SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, color, color[2], color[8], 0x00); [10]
+void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color, SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, color, color, color, 0x00);
     SDL_RenderDrawLine(renderer, 
         matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1),
         matriz_obtener(m, 1, coord2 + 1), matriz_obtener(m, 2, coord2 + 1));
 }
 
-void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[1], SDL_Renderer* renderer) {
+void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color, SDL_Renderer* renderer) {
     if (matriz_obtener(m, 3, coord1 + 1) < 1 || matriz_obtener(m, 3, coord2 + 1) < 1) {
         return;
-    } [11]
+    }
     dibujar_linea(m, coord1, coord2, color, renderer);
 }
 
 bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
-    matriz_t* app = matriz_aplicar(pila_ver_tope(transformacion), modelo_obtener_coords(modelo)); [11]
+    matriz_t* app = matriz_aplicar(pila_ver_tope(transformacion), modelo_obtener_coords(modelo));
     if (app == NULL) return false;
 
-    matriz_t* print = matriz_multiplicar(pantalla, app); [11]
+    matriz_t* print = matriz_multiplicar(pantalla, app);
     matriz_destruir(app);
     if (print == NULL) return false;
 
@@ -148,9 +148,9 @@ bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, 
 }
 
 bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
-    if (!apilar_rototraslacion(transformacion, cuerpo->pos, cuerpo->angz)) return false; [12]
+    if (!apilar_rototraslacion(transformacion, cuerpo->pos, cuerpo->angz)) return false;
 
-    modelo_t* modelo = buscar_bloque(cuerpo->bloque, modelos); [12]
+    modelo_t* modelo = buscar_bloque(cuerpo->bloque, modelos);
     if (modelo == NULL || !bloque_imprimir(cuerpo->bloque, modelo, transformacion, pantalla, renderer)) {
         desapilar_rototraslacion(transformacion);
         return false;
@@ -204,7 +204,7 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
 }
 
 bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
-    bloque_t elementos[] = {HORIZONTE, MONTANA, LUNA}; [14]
+    bloque_t elementos[] = {HORIZONTE, MONTANA, LUNA}; 
     for (int i = 0; i < 3; i++) {
         modelo_t* mod = buscar_modelo(etiquetas[elementos[i]], modelos);
         if (mod == NULL || !bloque_imprimir(elementos[i], mod, transformacion, pantalla, renderer)) {
@@ -216,10 +216,10 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
 
 /* --- Animación de Destrucción (Tiro Oblicuo) --- */
 
-bool animacion_destruccion(float pos[1], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+bool animacion_destruccion(float pos, int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; 
-    float tiro_oblicuo[1] = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; 
-    bloque_t bloques[16] = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; 
+    float tiro_oblicuo = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; 
+    bloque_t bloques = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; 
 
     matriz_t* tras_pos = matriz_crear_tras(pos);
     if (tras_pos == NULL || !apilar_transformacion(transformacion, tras_pos)) return false;
@@ -239,7 +239,7 @@ bool animacion_destruccion(float pos[1], int t_animacion, lista_t* modelos, pila
     }
     desapilar_transformacion(transformacion);
     return true;
-} [15]
+} 
 
 /* --- Auxiliares --- */
 
@@ -252,7 +252,7 @@ matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho) {
     matriz_establecer(pantalla, 2, 4, altura / 2.0); 
     matriz_establecer(pantalla, 1, 4, ancho / 2.0); 
     return pantalla;
-} [4]
+}
 
 modelo_t* buscar_modelo(const char* etiqueta, lista_t* modelos) {
     lista_iter_t* iterador = lista_iter_crear(modelos);
@@ -266,8 +266,8 @@ modelo_t* buscar_modelo(const char* etiqueta, lista_t* modelos) {
     }
     lista_iter_destruir(iterador);
     return NULL;
-} [9]
+}
 
 modelo_t* buscar_bloque(bloque_t bloque, lista_t* modelos) {
     return buscar_modelo(etiquetas[bloque], modelos);
-} [10]
+}
