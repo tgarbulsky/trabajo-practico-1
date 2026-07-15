@@ -139,10 +139,10 @@ void destruir_modelo(void* modelo) {
 
 matriz_t* modelo_obtener_coords(modelo_t* modelo) { return modelo->coords; }
 
-void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord[7]) {
+void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord) {
     coord = matriz_obtener(modelo->coords, fila + 1, 1);
-    coord[8] = matriz_obtener(modelo->coords, fila + 1, 2);
-    coord[9] = matriz_obtener(modelo->coords, fila + 1, 3);
+    coord = matriz_obtener(modelo->coords, fila + 1, 2);
+    coord = matriz_obtener(modelo->coords, fila + 1, 3);
 }
 
 size_t modelo_ncoords(modelo_t* modelo) { return matriz_filas(modelo->coords); }
