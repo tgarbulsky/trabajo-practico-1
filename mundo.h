@@ -27,7 +27,7 @@
 
 // --- Enumerativos --- //
 enum bloques { TANQUE, TORRETA, RADAR, MISIL, CUBO1, CUBO2, CUBO3, 
-               PIRAMIDE1, PIRAMIDE2, PIRAMIDE3, HORIZONTE, MONTANA, LUNA };
+               PIRAMIDE1, PIRAMIDE2, PIRAMIDE3, HORIZONTE, MONTANA, LUNA, RESTO1, RESTO2 };
 typedef enum bloques bloque_t;
 
 // --- Estructuras --- //
