@@ -100,7 +100,7 @@ void desapilar_rototraslacion(pila_t* transformacion) {
 }
 
 bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t* transformacion) {
-    float aux_ang[3] = 0;
+    float aux_ang[3] = {0, M_PI/2.0, M_PI/2.0};
     if (t_mov != 0) aux_ang[1] -= random_float(0, 0.01);
     if (t_rot != 0) aux_ang[2] += random_float(0, 0.01);
 
@@ -131,9 +131,12 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
     }
     
     return true;
+}
 
 void desapilar_cuadro_transformacion(pila_t* transformacion) {
-    for (int i = 0; i < 4; i++) desapilar_transformacion(transformacion);
+    for (int i = 0; i < 4; i++) {
+        desapilar_transformacion(transformacion);
+    }
 }
 
 //--- Motor de Renderizado 3D --- //
