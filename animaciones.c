@@ -51,7 +51,7 @@ const unsigned char colores[][3] = {
     [MONTANA]={255, 255, 255}, 
     [LUNA]={255, 255, 255},
     [RESTO1]={255, 255, 255}, 
-    [RESTO2]={255, 255, 255}
+    [RESTO2]={255, 255, 255},
 };
 
 //--- gestion de la pila de transformaciones ---/
