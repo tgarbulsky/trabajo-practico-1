@@ -31,7 +31,7 @@ const char* etiquetas[] = {
     [PIRAMIDE3]="PIRAMIDE3",
     [HORIZONTE]="HORIZONTE", 
     [MONTANA]="MONTANA", 
-    LUNA]="LUNA",
+    [LUNA]="LUNA",
     [RESTO1]="RESTO1", 
     [RESTO2]="RESTO2"
 };
