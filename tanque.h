@@ -34,6 +34,15 @@ typedef struct tanque {
     float ang_radar;    // Ángulo relativo del radar
 } tanque_t;
 
+
+//---randomizadores---//
+// Genera un número aleatorio flotante entre 0 y 1
+float random_01();
+// Genera un número aleatorio flotante
+float random_float(float a, float b);
+// Genera un número aleatorio entero
+int random_int(int a, int b);
+
 /* --- Primitivas de Creación --- */
 
 // Crea un tanque en (x, y) con ángulo angz. Radar y torreta en 0 .
@@ -42,7 +51,7 @@ tanque_t* crear_tanque(float x, float y, float angz);
 // Crea un tanque enemigo a 50m del jugador evitando obstáculos.
 tanque_t* crear_tanque_enemigo(float x_fp, float y_fp, lista_t* obstaculos);
 
-/* --- Primitivas de Movimiento y Control --- */
+//---Primitivas de Movimiento y Control---//
 
 // Mueve el tanque validando colisiones con obstáculos y el otro tanque.
 void tanque_mover(tanque_t* tanque, enum tras tras, lista_t* obstaculos, tanque_t* otro_tanque);

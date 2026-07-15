@@ -36,7 +36,7 @@ void destruir_modelo(void* modelo);
 matriz_t* modelo_obtener_coords(modelo_t* modelo);
 
 // Obtiene una coordenada específica en el arreglo coord
-void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord[2]);
+void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord[3]);
 
 // Devuelve la cantidad total de puntos (coordenadas).
 size_t modelo_ncoords(modelo_t* modelo);
