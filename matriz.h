@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-
+#include <stddef.h>
 typedef struct matriz matriz_t;
 
 // Creadores y Destructor
@@ -15,7 +15,7 @@ matriz_t *matriz_crear_proy(size_t n);
 matriz_t *matriz_crear_rotz(double angz);
 matriz_t *matriz_crear_roty(double angy);
 matriz_t *matriz_crear_rotx(double angx);
-matriz_t *matriz_crear_tras(const float vector[4]);
+matriz_t *matriz_crear_tras(const float vector[3]);
 matriz_t *matriz_crear_escalar(size_t n, float* factor);
 
 // Getters y Setters

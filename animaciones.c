@@ -11,6 +11,7 @@
 #include "pila.h"
 #include "lista.h"
 #include "mundo.h"
+#include "tanque.h"
 
 //--- constantes y tablas de busqueda ---//
 const float g = -9.81; 
@@ -215,10 +216,10 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
 
 //--- Animación de Destrucción (Tiro Oblicuo) --- //
 
-bool animacion_destruccion(float pos, int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; 
-    float tiro_oblicuo = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; 
-    bloque_t bloques = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; 
+    float tiro_oblicuo[3] = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; 
+    bloque_t bloques[6] = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; 
 
     matriz_t* tras_pos = matriz_crear_tras(pos);
     if (tras_pos == NULL || !apilar_transformacion(transformacion, tras_pos)) return false;

@@ -37,8 +37,8 @@ typedef struct cuerpo {
 } cuerpo_t;
 
 // --- Primitivas de Física y Colisión --- //
-float norma_r3(float v1, float v2);
-bool colisiones(lista_t* obstaculos, float otros_colisionables, float pos, float hitbox);
+float norma_r3(float v1[3], float v2[3]);
+bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox);
 
 // --- Primitivas de Creación --- //
 cuerpo_t* crear_obstaculo();

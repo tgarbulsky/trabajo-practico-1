@@ -3,11 +3,12 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 typedef struct lista lista_t;
 typedef struct lista_iter lista_iter_t;
 
-/* --- Primitivas de lista --- */
+// --- Primitivas de lista --- //
 
 // Crea una lista vacía.
 lista_t *lista_crear(void);

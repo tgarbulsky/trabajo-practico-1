@@ -93,7 +93,7 @@ matriz_t *matriz_crear_rotx(double angx) {
     return matriz_mx;
 }
 
-matriz_t *matriz_crear_tras(const float vector[8]) {
+matriz_t *matriz_crear_tras(const float vector[3]) {
     matriz_t *matriz_mt = _matriz_crear(4, 4);
     if (matriz_mt == NULL) return NULL;
     set_id_mx(matriz_mt);
