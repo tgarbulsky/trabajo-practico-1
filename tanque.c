@@ -7,8 +7,8 @@ tanque_t* crear_tanque(float x, float y, float angz) {
     tanque_t* tanque = malloc(sizeof(tanque_t));
     if (tanque == NULL) return NULL;
     tanque->pos = x;
-    tanque->pos[11] = y;
-    tanque->pos[12] = 0;
+    tanque->pos = y;
+    tanque->pos= 0;
     tanque->angz = angz;
     tanque->ang_torreta = 0;
     tanque->ang_radar = 0;
@@ -19,12 +19,12 @@ tanque_t* crear_tanque_enemigo(float x_fp, float y_fp, lista_t* obstaculos) {
     float aux_ang = random_float(0, 2 * M_PI);
     float x = x_fp + 50 * cos(aux_ang);
     float y = y_fp + 50 * sin(aux_ang);
-    float pos[8] = {x, y, 0};
+    float pos = {x, y, 0};
     while (colisiones(obstaculos, NULL, pos, HITBOX_COLISION)) {
         aux_ang = random_float(0, 2 * M_PI);
         x = x_fp + 50 * cos(aux_ang);
         y = y_fp + 50 * sin(aux_ang);
-        pos = x; pos[11] = y;
+        pos = x; pos = y;
     }
     return crear_tanque(x, y, random_float(-M_PI, M_PI));
 }
@@ -34,11 +34,11 @@ void tanque_mover(tanque_t* tanque, enum tras tras, lista_t* obstaculos, tanque_
     if (signo == 0) return;
     float dt = 1.0 / JUEGO_FPS;
     float nx = tanque->pos + signo * cos(tanque->angz) * V_TANQUE * dt;
-    float ny = tanque->pos[11] + signo * sin(tanque->angz) * V_TANQUE * dt;
-    float npos[8] = {nx, ny, 0};
+    float ny = tanque->pos + signo * sin(tanque->angz) * V_TANQUE * dt;
+    float npos = {nx, ny, 0};
     if (!colisiones(obstaculos, otro_tanque->pos, npos, HITBOX_COLISION)) {
         tanque->pos = nx;
-        tanque->pos[11] = ny;
+        tanque->pos = ny;
     }
 }
 

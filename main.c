@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     //begin codigo alumno
     srand(time(NULL));
 
-    // 1. CARGA DE MODELOS DEL STL [2]
+    // CARGA DE MODELOS DEL STL 
     FILE* f = fopen(RUTA_STL, "rb");
     if (f == NULL) return 1;
 
@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
     }
     fclose(f);
 
-    // 2. INICIALIZACIÓN DEL MUNDO [3]
-    tanque_t* jugador = crear_tanque(0, 0, 0); // En el origen [3, 4]
+    // INICIALIZACION DEL MUNDO
+    tanque_t* jugador = crear_tanque(0, 0, 0);
     lista_t* obstaculos = lista_crear();
     for (int i = 0; i < NRO_OBSTACULOS; i++) {
         lista_insertar_ultimo(obstaculos, crear_obstaculo());
@@ -70,13 +70,11 @@ int main(int argc, char *argv[]) {
     int t_cooldown_jugador = 0;
     int t_muerte_anim = 0;
     int t_destruccion_enemigo = 0;
-    float pos_destruccion[6]; // Para fijar la posición de la explosión del enemigo
+    float pos_destruccion[6];
 
-    // Misiles
     cuerpo_t* misil_jugador = NULL;
     cuerpo_t* misil_enemigo = NULL;
     
-    // IA State
     enum acciones_ia ia_accion = IA_NONE;
     int t_accion_ia = 0;
     //end codigo alumno
@@ -101,39 +99,36 @@ int main(int argc, char *argv[]) {
         if (state[SDL_SCANCODE_A]) rot_jug = ROT_CCW;
         if (state[SDL_SCANCODE_D]) rot_jug = ROT_CW;
 
-        // --- LÓGICA DEL JUEGO ---
+        // --- LOGICA DEL JUEGO ---
         if (t_muerte_anim == 0) {
-            // Movimiento del jugador [7, 8]
             tanque_mover(jugador, mov_jug, obstaculos, enemigo);
             tanque_rotar(jugador, rot_jug);
             tanque_radar(jugador);
 
-            // Disparo del jugador [9]
             if (state[SDL_SCANCODE_SPACE] && t_cooldown_jugador == 0 && misil_jugador == NULL) {
                 misil_jugador = malloc(sizeof(cuerpo_t));
                 misil_jugador->bloque = MISIL;
                 misil_jugador->pos = jugador->pos;
-                misil_jugador->pos[5] = jugador->pos[5];
-                misil_jugador->pos[10] = 3; // Altura cañón
+                misil_jugador->pos = jugador->pos;
+                misil_jugador->pos = 3;
                 misil_jugador->angz = jugador->angz;
                 t_cooldown_jugador = COOLDOWN * JUEGO_FPS;
             }
 
-            // IA Enemiga [11, 12]
+            // IA Enemiga
             decidir_accion_ia(&ia_accion, &t_accion_ia, enemigo, jugador);
             ia_acciones(enemigo, ia_accion, obstaculos, jugador);
             if (t_accion_ia > 0) t_accion_ia--; else ia_accion = IA_NONE;
 
-            // Torreta enemiga y disparo IA [13-15]
+            // Torreta enemiga y disparo IA 
             enum turr turr_ia;
             if (en_rango_vision_ia(enemigo, jugador, 1.0, &turr_ia)) {
                 tanque_rotar_torreta(enemigo, turr_ia);
-                // Si está apuntado, dispara (simplificado)
             } else {
                 tanque_rotar_torreta(enemigo, TURR_OFF);
             }
 
-            // Evolución de misiles [16, 17]
+            // Evolución de misiles 
             if (misil_jugador != NULL) {
                 bool kill = false;
                 if (!misil_mover(misil_jugador, obstaculos, enemigo, &kill)) {
@@ -141,8 +136,8 @@ int main(int argc, char *argv[]) {
                         score += SCORE_INC;
                         t_destruccion_enemigo = T_ANIM * JUEGO_FPS;
                         pos_destruccion = enemigo->pos;
-                        pos_destruccion[5] = enemigo->pos[5];
-                        pos_destruccion[10] = enemigo->pos[10];
+                        pos_destruccion = enemigo->pos;
+                        pos_destruccion = enemigo->pos;
                         free(enemigo);
                         enemigo = crear_tanque_enemigo(jugador->pos[0], jugador->pos[1], obstaculos);
                     }
@@ -164,7 +159,7 @@ int main(int argc, char *argv[]) {
 
         pila_t* transformaciones = pila_crear();
         
-        // 1. Motores 3D: Cámara y Mundo [18-21]
+        //Motores 3D: Camara y Mundo
         if (apilar_cuadro_transformacion((mov_jug != TRAS_NONE), (rot_jug != ROT_NONE), jugador, transformaciones)) {
             mundo_imprimir(modelos, transformaciones, pantalla, renderer);
             imprimir_obstaculos(obstaculos, modelos, transformaciones, pantalla, renderer);
@@ -182,10 +177,10 @@ int main(int argc, char *argv[]) {
             desapilar_cuadro_transformacion(transformaciones);
         }
 
-        // 2. Interfaz 2D: HUD [22-24]
+        //Interfaz 2D
         char mira_actual = en_rango_vision_sim(jugador, enemigo, 0.15) ? '+' : '-';
         
-        // Calcular posición relativa del enemigo para el HUD
+        // Calcular posición relativa del enemigo
         enum enemy_to e_pos = FRONT;
         float dy = enemigo->pos[1] - jugador->pos[1];
         float dx = enemigo->pos[0] - jugador->pos[0];
@@ -199,7 +194,7 @@ int main(int argc, char *argv[]) {
 
         imprimir_hud(vidas, score, e_pos, mira_actual, modelos, renderer);
 
-        // Animación de muerte si corresponde [25, 26]
+        // Animacion de muerte si corresponde
         if (t_muerte_anim > 0) {
             animacion_muerte(t_muerte_anim, 25, vidas, modelos, renderer);
         }

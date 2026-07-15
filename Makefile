@@ -1,12 +1,12 @@
 # Nombre del ejecutable final
 TARGET = battlezone
 
-# Compilador y banderas
+# compilador y flags
 CC = gcc
 CFLAGS = -Wall -std=c11 -pedantic -g
 LDFLAGS = -lSDL2 -lm
 
-#lista de archivos objeto (.o)
+#lista de archivos objeto
 OBJS = main.o \
        matriz.o \
        pila.o \
@@ -19,7 +19,7 @@ OBJS = main.o \
        interfaz_2d.o \
        animaciones.o
 
-# Regla principal: compila todo y genera el ejecutable
+# Regla principal
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -39,9 +39,11 @@ obstaculo.o: obstaculo.c obstaculo.h mundo.h
 interfaz_2d.o: interfaz_2d.c interfaz_2d.h animaciones.h
 animaciones.o: animaciones.c animaciones.h mundo.h matriz.h pila.h
 
-#limpiar los archivos temporales y el ejecutable
 clean:
 	rm -f $(OBJS) $(TARGET)
+
+clean_objs:
+	rm -f $(OBJS)
 
 #Valgrind y las supresiones
 valgrind: $(TARGET)

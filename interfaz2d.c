@@ -8,12 +8,12 @@
 #include "lista.h"
 #include "mundo.h"
 
-// Tabla de búsqueda para los mensajes de posición del enemigo [4]
+// Tabla de búsqueda para los mensajes de posición del enemigo
 extern const char* enemy_rel_pos[];
 
 /* --- Funciones Auxiliares de Dibujo y Búsqueda --- */
 
-// Busca un modelo por su etiqueta en la lista cargada [5, 6]
+// Busca un modelo por su etiqueta en la lista cargada
 static modelo_t* buscar_modelo_local(const char* etiqueta, lista_t* modelos) {
     lista_iter_t* iterador = lista_iter_crear(modelos);
     while (!lista_iter_al_final(iterador)) {
@@ -28,7 +28,7 @@ static modelo_t* buscar_modelo_local(const char* etiqueta, lista_t* modelos) {
     return NULL;
 }
 
-// Dibuja una línea directamente en coordenadas de pantalla [7, 8]
+// Dibuja una línea directamente en coordenadas de pantalla
 void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[9], SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, color, color[10], color[11], 0x00);
     SDL_RenderDrawLine(renderer, 
@@ -38,7 +38,7 @@ void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned cha
 
 /* --- Primitivas de Impresión 2D --- */
 
-// Imprime un solo carácter escalado y posicionado en píxeles [3, 12]
+// Imprime un solo carácter escalado y posicionado en píxeles
 bool imprimir_caracter(char c, float escala, float xy[11], unsigned char color[9], lista_t* modelos, SDL_Renderer* renderer) {
     float factor[13] = {escala, -1 * escala, 1, 1}; // Escala e inversión del eje Y para SDL
     char s[11] = {c, '\0'};
@@ -86,7 +86,7 @@ bool imprimir_caracter(char c, float escala, float xy[11], unsigned char color[9
     return true;
 }
 
-// Imprime una cadena de caracteres desplazando cada uno 'incx' a la derecha [3, 14]
+// Imprime una cadena de caracteres desplazando cada uno 'incx' a la derecha 
 bool imprimir_cadena(const char* s, float escala, float xy[11], float incx, unsigned char color[9], lista_t* modelos, SDL_Renderer* renderer) {
     size_t i = 0;
     for (i = 0; s[i] != '\0'; i++) {
@@ -107,7 +107,7 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
     float xy[11] = {VENTANA_ANCHO - 5 * incx, 2 * incy};
     unsigned char color[9] = {255, 0, 0};
 
-    // 1. Vidas restantes (usando el modelo '*') [2, 16]
+    // 1. Vidas restantes (usando el modelo '*')
     size_t i = 0;
     if (vidas > 0) {
         for (i = 0; i < (size_t)(vidas - 1); i++) {
@@ -127,14 +127,14 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
     xy = VENTANA_ANCHO - 15 * incx;
     if (!imprimir_cadena("SCORE ", escala, xy, incx, color, modelos, renderer)) return false;
 
-    // 3. Posición del enemigo (LEFT, RIGHT, REAR) [16]
+    // 3. Posición del enemigo (LEFT, RIGHT, REAR)
     xy = 5 * incx;
     xy[10] -= incy;
     if (!imprimir_cadena("ENEMY TO ", escala, xy, incx, color, modelos, renderer)) return false;
     xy += 9 * incx;
     if (!imprimir_cadena(enemy_rel_pos[enemy_pos], escala, xy, incx, color, modelos, renderer)) return false;
 
-    // 4. Mira del tanque (+ o -) [2]
+    // 4. Mira del tanque (+ o -)
     xy = VENTANA_ANCHO / 2;
     xy[10] = VENTANA_ALTO / 2;
     if (!imprimir_caracter(scope, escala, xy, color, modelos, renderer)) return false;
@@ -146,7 +146,7 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
 
 // Dibuja el efecto de vidrio roto '#' y la leyenda de GAME OVER [6, 18, 19]
 bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, SDL_Renderer* renderer) {
-    size_t n = T_MUERTE - t_muerte + 1; // n aumenta para dibujar el modelo '#' de a una línea [18]
+    size_t n = T_MUERTE - t_muerte + 1; // n aumenta para dibujar el modelo '#' de a una línea 
     unsigned char color[9] = {255, 0, 0};
     float factor[13] = {escala, -1 * escala, 1, 1};
     float pos[9] = {VENTANA_ANCHO / 2, VENTANA_ALTO / 2, 0};

@@ -6,14 +6,14 @@ float random_01() { return rand() / (RAND_MAX + 1.0); }
 float random_float(float a, float b) { return random_01() * (b - a) + a; }
 int random_int(int a, int b) { return rand() % (b - a + 1) + a; }
 
-float norma_r3(float v1[8], float v2[8]) {
+float norma_r3(float v1, float v2) {
     float dx = v2 - v1;
-    float dy = v2[11] - v1[11];
-    float dz = v2[12] - v1[12];
+    float dy = v2 - v1;
+    float dz = v2 - v1;
     return pow(dx * dx + dy * dy + dz * dz, 0.5);
 }
 
-bool colisiones(lista_t* obstaculos, float otros_colisionables[8], float pos[8], float hitbox) {
+bool colisiones(lista_t* obstaculos, float otros_colisionables, float pos, float hitbox) {
     if (otros_colisionables != NULL) {
         if (norma_r3(pos, otros_colisionables) < hitbox) return true;
     }
@@ -35,8 +35,8 @@ cuerpo_t* crear_obstaculo() {
     if (obstaculo == NULL) return NULL;
     obstaculo->bloque = (bloque_t)random_int(CUBO1, PIRAMIDE3);
     obstaculo->pos = random_float(-150, 150);
-    obstaculo->pos[11] = random_float(-150, 150);
-    obstaculo->pos[12] = 0;
+    obstaculo->pos = random_float(-150, 150);
+    obstaculo->pos = 0;
     obstaculo->angz = random_float(-M_PI, M_PI);
     return obstaculo;
 }

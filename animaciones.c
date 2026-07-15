@@ -12,7 +12,7 @@
 #include "lista.h"
 #include "mundo.h"
 
-/* --- Constantes y Tablas de Búsqueda --- */
+//--- constantes y tablas de busqueda ---//
 const float g = -9.81; 
 const float pos_rel_torreta = {0, 0, 3}; 
 const float pos_rel_radar = {-1.5, 0, 0.5}; 
@@ -33,7 +33,7 @@ const unsigned char colores[] = {
     [RESTO1]={255, 255, 255}, [RESTO2]={255, 255, 255}
 };
 
-/* --- Gestión de la Pila de Transformaciones --- */
+//--- gestion de la pila de transformaciones ---/
 
 bool apilar_transformacion(pila_t* transformacion, matriz_t* matriz) {
     if (pila_ver_tope(transformacion) == NULL) {
@@ -100,20 +100,22 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
         return false;
     }
 
-    float pos_inv[3] = {-1 * tanque->pos, -1 * tanque->pos[2], -3};
+    float pos_inv[] = {-1 * tanque->pos, -1 * tanque->pos[1], -3};
     matriz_t* tanque_pos = matriz_crear_tras(pos_inv);
     if (tanque_pos == NULL || !apilar_transformacion(transformacion, tanque_pos)) {
-        desapilar_transformacion(transformacion); desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
+        desapilar_transformacion(transformacion); 
+        desapilar_transformacion(transformacion); 
+        desapilar_transformacion(transformacion);
         return false;
     }
+    
     return true;
-}
 
 void desapilar_cuadro_transformacion(pila_t* transformacion) {
     for (int i = 0; i < 4; i++) desapilar_transformacion(transformacion);
 }
 
-/* --- Motor de Renderizado 3D --- */
+//--- Motor de Renderizado 3D --- //
 
 void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color, SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, color, color, color, 0x00);
@@ -173,14 +175,12 @@ bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transfor
 }
 
 bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
-    // 1. Cuerpo
-    if (!apilar_rototraslacion(transformacion, tanque->pos, tanque->angz)) return false; [13]
+    if (!apilar_rototraslacion(transformacion, tanque->pos, tanque->angz)) return false;
     modelo_t* mod = buscar_bloque(TANQUE, modelos);
     if (mod == NULL || !bloque_imprimir(TANQUE, mod, transformacion, pantalla, renderer)) {
         desapilar_rototraslacion(transformacion); return false;
     }
 
-    // 2. Torreta (Relativa al cuerpo)
     mod = buscar_bloque(TORRETA, modelos);
     if (mod == NULL || !apilar_rototraslacion(transformacion, pos_rel_torreta, tanque->ang_torreta)) {
         desapilar_rototraslacion(transformacion); return false;
@@ -189,7 +189,6 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
         desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); return false;
     }
 
-    // 3. Radar (Relativo a la torreta)
     mod = buscar_bloque(RADAR, modelos);
     if (mod == NULL || !apilar_rototraslacion(transformacion, pos_rel_radar, tanque->ang_radar)) {
         desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); return false;
@@ -214,7 +213,7 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
     return true;
 }
 
-/* --- Animación de Destrucción (Tiro Oblicuo) --- */
+//--- Animación de Destrucción (Tiro Oblicuo) --- //
 
 bool animacion_destruccion(float pos, int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; 
@@ -241,7 +240,7 @@ bool animacion_destruccion(float pos, int t_animacion, lista_t* modelos, pila_t*
     return true;
 } 
 
-/* --- Auxiliares --- */
+//--- Auxiliares --- //
 
 matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho) {
     matriz_t* pantalla = _matriz_crear(4, 4);

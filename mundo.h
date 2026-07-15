@@ -9,13 +9,13 @@
 #include <math.h>
 #include "tanque.h"
 
-/* --- Constantes del Juego --- */
+//--- Constantes del Juego --- //
 #define VENTANA_ALTO 768
 #define VENTANA_ANCHO 1024
 #define JUEGO_FPS 24
 #define NRO_OBSTACULOS 50
 
-/* --- Constantes Físicas --- */
+//--- Constantes Físicas --- //
 #define V_TANQUE 7          // m/s
 #define WZ_TANQUE 0.36      // rad/s
 #define V_MISIL 24          // m/s
@@ -24,26 +24,26 @@
 #define VIDAS 4
 #define SCORE_INC 1000
 
-/* --- Enumerativos --- */
+// --- Enumerativos --- //
 enum bloques { TANQUE, TORRETA, RADAR, MISIL, CUBO1, CUBO2, CUBO3, 
                PIRAMIDE1, PIRAMIDE2, PIRAMIDE3, HORIZONTE, MONTANA, LUNA };
 typedef enum bloques bloque_t;
 
-/* --- Estructuras --- */
+// --- Estructuras --- //
 typedef struct cuerpo {
     bloque_t bloque;
     float pos[3];
     float angz;
 } cuerpo_t;
 
-/* --- Primitivas de Física y Colisión --- */
-float norma_r3(float v1[3], float v2[3]);
-bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox);
+// --- Primitivas de Física y Colisión --- //
+float norma_r3(float v1, float v2);
+bool colisiones(lista_t* obstaculos, float otros_colisionables, float pos, float hitbox);
 
-/* --- Primitivas de Creación --- */
+// --- Primitivas de Creación --- //
 cuerpo_t* crear_obstaculo();
 
-/* --- Lógica y Movimiento --- */
+// --- Lógica y Movimiento --- //
 void tanque_mover(tanque_t* tanque, enum tras tras, lista_t* obstaculos, tanque_t* otro_tanque);
 bool misil_mover(cuerpo_t* misil, lista_t* obstaculos, tanque_t* otro_tanque, bool* kill);
 

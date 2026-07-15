@@ -33,7 +33,7 @@ void lista_destruir(lista_t *lista, void (*destruir_dato)(void *));
 // Iterador interno: recorre la lista llamando a 'visitar' para cada dato.
 void lista_recorrer(lista_t *lista, bool (*visitar)(void *dato, void *extra), void *extra);
 
-/* --- Primitivas de iteración externa --- */
+//--- Primitivas de iteración externa
 
 // Crea un iterador para la lista.
 lista_iter_t *lista_iter_crear(lista_t *lista);
