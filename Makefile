@@ -26,8 +26,6 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # Reglas para cada archivo objeto
-# Nota: La magia de las reglas implícitas de make se encarga del resto, 
-# pero las listamos para asegurar las dependencias.
 
 main.o: main.c mundo.h animaciones.h matriz.h modelo.h lista.h pila.h
 matriz.o: matriz.c matriz.h
