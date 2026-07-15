@@ -100,9 +100,9 @@ void desapilar_rototraslacion(pila_t* transformacion) {
 }
 
 bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t* transformacion) {
-    float aux_ang = 0;
-    if (t_mov != 0) aux_ang -= random_float(0, 0.01);
-    if (t_rot != 0) aux_ang += random_float(0, 0.01);
+    float aux_ang[3] = 0;
+    if (t_mov != 0) aux_ang[1] -= random_float(0, 0.01);
+    if (t_rot != 0) aux_ang[2] += random_float(0, 0.01);
 
     matriz_t* rotz = matriz_crear_rotz(aux_ang[2]);
     matriz_t* roty = matriz_crear_roty(aux_ang[1]);
