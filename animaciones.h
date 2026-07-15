@@ -12,6 +12,11 @@
 #include "tanque.h"
 
 #define T_ANIM 2
+
+extern const char* etiquetas[];
+extern const unsigned char colores[][3];
+extern const char* enemy_rel_pos[];
+
 // --- Gestión de la Pila de Transformaciones --- //
 
 // Si la pila está vacía, asigna la matriz en el tope. 
