@@ -69,7 +69,7 @@ void tanque_rotar_torreta(tanque_t* tanque, enum turr turr) {
 
 bool _en_rango_vision(tanque_t* pov, tanque_t* obj, float low, float high) {
     if (obj == NULL) return false;
-    float ang = atan2(obj->pos[11] - pov->pos[11], obj->pos - pov->pos);
+    float ang = atan2(obj->pos[1] - pov->pos[1], obj->pos[0] - pov->pos[0]);
     float dang = ang - pov->angz;
     while (dang < -M_PI) dang += 2 * M_PI;
     while (dang > M_PI) dang -= 2 * M_PI;
