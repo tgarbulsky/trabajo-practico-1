@@ -15,8 +15,8 @@
 
 //--- constantes y tablas de busqueda ---//
 const float g = -9.81; 
-const float pos_rel_torreta = {0, 0, 3}; 
-const float pos_rel_radar = {-1.5, 0, 0.5};
+const float pos_rel_torreta[3] = {0, 0, 3}; 
+const float pos_rel_radar[3] = {-1.5, 0, 0.5};
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
