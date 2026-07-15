@@ -24,7 +24,7 @@ struct modelo {
     size_t nlineas;
 };
 
-/* --- Funciones Auxiliares de Lectura Binaria (Little Endian) --- */
+/* --- Funciones Auxiliares de Lectura Binaria--- */
 
 static bool leer_int16_little_endian(FILE* f, int16_t* v) {
     *v = 0;
@@ -84,7 +84,14 @@ static bool leer_formato_stl(FILE* f, unidades_t* unidades, size_t* maxlong) {
 bool verificar_stl(FILE* f, unidades_t* unidades, size_t* maxlong) {
     return leer_encabezado_stl(f) && leer_formato_stl(f, unidades, maxlong);
 }
-
+//---Auxiliar---//
+static char* mi_strdup(const char* s) {
+    size_t len = strlen(s) + 1;
+    char* d = malloc(len);
+    if (d == NULL) return NULL;
+    strcpy(d, s);
+    return d;
+}
 /* --- Implementación del TDA --- */
 
 modelo_t* leer_modelo(FILE* f, size_t maxlong, unidades_t unidades) {
@@ -95,7 +102,7 @@ modelo_t* leer_modelo(FILE* f, size_t maxlong, unidades_t unidades) {
     modelo_t* modelo = malloc(sizeof(modelo_t));
     if(!modelo) return NULL;
 
-    modelo->etiqueta = strdup(etiqueta);
+    modelo->etiqueta = mi_strdup(etiqueta);
     modelo->unidad = unidades;
     modelo->coords = _matriz_crear(ncoords, 3);
     
@@ -139,10 +146,10 @@ void destruir_modelo(void* modelo) {
 
 matriz_t* modelo_obtener_coords(modelo_t* modelo) { return modelo->coords; }
 
-void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord) {
-    coord = matriz_obtener(modelo->coords, fila + 1, 1);
-    coord = matriz_obtener(modelo->coords, fila + 1, 2);
-    coord = matriz_obtener(modelo->coords, fila + 1, 3);
+void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord[3]) {
+    coord[0] = matriz_obtener(modelo->coords, fila + 1, 1);
+    coord[1] = matriz_obtener(modelo->coords, fila + 1, 2);
+    coord[2] = matriz_obtener(modelo->coords, fila + 1, 3);
 }
 
 size_t modelo_ncoords(modelo_t* modelo) { return matriz_filas(modelo->coords); }
