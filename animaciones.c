@@ -81,7 +81,7 @@ void desapilar_transformacion(pila_t* transformacion) {
     matriz_destruir(pila_desapilar(transformacion));
 }
 
-bool apilar_rototraslacion(pila_t* transformacion, const float v[1], const float angz) {
+bool apilar_rototraslacion(pila_t* transformacion, const float v[3], const float angz) {
     matriz_t* tras = matriz_crear_tras(v);
     if (tras == NULL) return false;
     if (!apilar_transformacion(transformacion, tras)) return false;
