@@ -64,7 +64,7 @@ bool apilar_transformacion(pila_t* transformacion, matriz_t* matriz) {
         }
         return true;
     }
-    matriz_t* nuevo_top = matriz_multiplicar(pila_ver_tope(transformacion), matriz); [5]
+    matriz_t* nuevo_top = matriz_multiplicar(pila_ver_tope(transformacion), matriz);
     if (nuevo_top == NULL) {
         matriz_destruir(matriz);
         return false;
