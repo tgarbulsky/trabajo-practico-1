@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < NRO_OBSTACULOS; i++) {
         lista_insertar_ultimo(obstaculos, crear_obstaculo());
     }
-    tanque_t* enemigo = crear_tanque_enemigo(jugador->pos, jugador->pos[5], obstaculos);
+    tanque_t* enemigo = crear_tanque_enemigo(jugador->pos[0], jugador->pos[1], obstaculos);
 
     matriz_t* pantalla = matriz_crear_pantalla(VENTANA_ALTO, VENTANA_ANCHO);
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
                         pos_destruccion[5] = enemigo->pos[5];
                         pos_destruccion[10] = enemigo->pos[10];
                         free(enemigo);
-                        enemigo = crear_tanque_enemigo(jugador->pos, jugador->pos[5], obstaculos);
+                        enemigo = crear_tanque_enemigo(jugador->pos[0], jugador->pos[1], obstaculos);
                     }
                     free(misil_jugador);
                     misil_jugador = NULL;
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
         
         // Calcular posición relativa del enemigo para el HUD
         enum enemy_to e_pos = FRONT;
-        float dy = enemigo->pos[5] - jugador->pos[5];
-        float dx = enemigo->pos - jugador->pos;
+        float dy = enemigo->pos[1] - jugador->pos[1];
+        float dx = enemigo->pos[0] - jugador->pos[0];
         float ang_rel = atan2(dy, dx) - jugador->angz;
         while (ang_rel < -M_PI) ang_rel += 2 * M_PI;
         while (ang_rel > M_PI) ang_rel -= 2 * M_PI;
