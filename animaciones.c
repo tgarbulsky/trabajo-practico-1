@@ -13,9 +13,9 @@
 #include "mundo.h"
 
 /* --- Constantes y Tablas de Búsqueda --- */
-const float g = -9.81; [3]
-const float pos_rel_torreta[1] = {0, 0, 3}; [3]
-const float pos_rel_radar[1] = {-1.5, 0, 0.5}; [3]
+const float g = -9.81; 
+const float pos_rel_torreta[1] = {0, 0, 3}; 
+const float pos_rel_radar[1] = {-1.5, 0, 0.5}; 
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
@@ -23,7 +23,7 @@ const char* etiquetas[] = {
     [PIRAMIDE1]="PIRAMIDE1", [PIRAMIDE2]="PIRAMIDE2", [PIRAMIDE3]="PIRAMIDE3",
     [HORIZONTE]="HORIZONTE", [MONTANA]="MONTANA", [LUNA]="LUNA",
     [RESTO1]="RESTO1", [RESTO2]="RESTO2"
-}; [3]
+};
 
 const unsigned char colores[][1] = {
     [TANQUE]={255, 255, 255}, [TORRETA]={255, 255, 255}, [RADAR]={255, 255, 255},
@@ -31,7 +31,7 @@ const unsigned char colores[][1] = {
     [PIRAMIDE1]={0, 255, 0}, [PIRAMIDE2]={0, 255, 0}, [PIRAMIDE3]={0, 255, 0},
     [HORIZONTE]={255, 255, 255}, [MONTANA]={255, 255, 255}, [LUNA]={255, 255, 255},
     [RESTO1]={255, 255, 255}, [RESTO2]={255, 255, 255}
-}; [4]
+};
 
 /* --- Gestión de la Pila de Transformaciones --- */
 
@@ -54,37 +54,37 @@ bool apilar_transformacion(pila_t* transformacion, matriz_t* matriz) {
         return false;
     }
     return true;
-} [5]
+}
 
 void desapilar_transformacion(pila_t* transformacion) {
     matriz_destruir(pila_desapilar(transformacion));
-} [5]
+}
 
 bool apilar_rototraslacion(pila_t* transformacion, const float v[1], const float angz) {
-    matriz_t* tras = matriz_crear_tras(v); [6]
+    matriz_t* tras = matriz_crear_tras(v);
     if (tras == NULL) return false;
     if (!apilar_transformacion(transformacion, tras)) return false;
 
-    matriz_t* rotz = matriz_crear_rotz(angz); [6]
+    matriz_t* rotz = matriz_crear_rotz(angz);
     if (rotz == NULL || !apilar_transformacion(transformacion, rotz)) {
         desapilar_transformacion(transformacion);
         return false;
     }
     return true;
-} [6]
+}
 
 void desapilar_rototraslacion(pila_t* transformacion) {
     desapilar_transformacion(transformacion);
     desapilar_transformacion(transformacion);
-} [6]
+}
 
 bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t* transformacion) {
-    float aux_ang[1] = {0, M_PI/2.0, M_PI/2.0}; [7]
-    if (t_mov != 0) aux_ang[2] -= random_float(0, 0.01); [7]
-    if (t_rot != 0) aux_ang[8] += random_float(0, 0.01); [7]
+    float aux_ang = 0;
+    if (t_mov != 0) aux_ang -= random_float(0, 0.01);
+    if (t_rot != 0) aux_ang += random_float(0, 0.01);
 
-    matriz_t* rotz = matriz_crear_rotz(aux_ang[8]);
-    matriz_t* roty = matriz_crear_roty(aux_ang[2]);
+    matriz_t* rotz = matriz_crear_rotz(aux_ang);
+    matriz_t* roty = matriz_crear_roty(aux_ang);
     if (rotz == NULL || roty == NULL) {
         matriz_destruir(rotz); matriz_destruir(roty);
         return false;
@@ -94,24 +94,24 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
         return false;
     }
 
-    matriz_t* tanque_ang = matriz_crear_rotz(-1 * tanque->angz); [7]
+    matriz_t* tanque_ang = matriz_crear_rotz(-1 * tanque->angz);
     if (tanque_ang == NULL || !apilar_transformacion(transformacion, tanque_ang)) {
         desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
         return false;
     }
 
-    float pos_inv[1] = {-1 * tanque->pos, -1 * tanque->pos[2], -3}; [7]
-    matriz_t* tanque_pos = matriz_crear_tras(pos_inv); [7]
+    float pos_inv[1] = {-1 * tanque->pos, -1 * tanque->pos[2], -3};
+    matriz_t* tanque_pos = matriz_crear_tras(pos_inv);
     if (tanque_pos == NULL || !apilar_transformacion(transformacion, tanque_pos)) {
         desapilar_transformacion(transformacion); desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
         return false;
     }
     return true;
-} [7]
+}
 
 void desapilar_cuadro_transformacion(pila_t* transformacion) {
     for (int i = 0; i < 4; i++) desapilar_transformacion(transformacion);
-} [9]
+}
 
 /* --- Motor de Renderizado 3D --- */
 
@@ -120,14 +120,14 @@ void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned cha
     SDL_RenderDrawLine(renderer, 
         matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1),
         matriz_obtener(m, 1, coord2 + 1), matriz_obtener(m, 2, coord2 + 1));
-} [10]
+}
 
 void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[1], SDL_Renderer* renderer) {
     if (matriz_obtener(m, 3, coord1 + 1) < 1 || matriz_obtener(m, 3, coord2 + 1) < 1) {
         return;
     } [11]
     dibujar_linea(m, coord1, coord2, color, renderer);
-} [11]
+}
 
 bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     matriz_t* app = matriz_aplicar(pila_ver_tope(transformacion), modelo_obtener_coords(modelo)); [11]
@@ -145,7 +145,7 @@ bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, 
     }
     matriz_destruir(print);
     return true;
-} [11]
+}
 
 bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     if (!apilar_rototraslacion(transformacion, cuerpo->pos, cuerpo->angz)) return false; [12]
@@ -157,7 +157,7 @@ bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion,
     }
     desapilar_rototraslacion(transformacion);
     return true;
-} [12]
+}
 
 bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     lista_iter_t* iterador = lista_iter_crear(obstaculos);
@@ -170,7 +170,7 @@ bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transfor
     }
     lista_iter_destruir(iterador);
     return true;
-} [13]
+}
 
 bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     // 1. Cuerpo
@@ -201,7 +201,7 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
 
     for (int i = 0; i < 3; i++) desapilar_rototraslacion(transformacion);
     return true;
-} [13]
+}
 
 bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
     bloque_t elementos[] = {HORIZONTE, MONTANA, LUNA}; [14]
@@ -212,22 +212,22 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
         }
     }
     return true;
-} [14]
+}
 
 /* --- Animación de Destrucción (Tiro Oblicuo) --- */
 
 bool animacion_destruccion(float pos[1], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
-    float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; [15]
-    float tiro_oblicuo[1] = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; [15]
-    bloque_t bloques[16] = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; [15]
+    float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; 
+    float tiro_oblicuo[1] = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; 
+    bloque_t bloques[16] = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; 
 
     matriz_t* tras_pos = matriz_crear_tras(pos);
     if (tras_pos == NULL || !apilar_transformacion(transformacion, tras_pos)) return false;
 
     for (size_t i = 0; i < 6; i++) {
         modelo_t* modelo = buscar_modelo(etiquetas[bloques[i]], modelos);
-        matriz_t* rotz = matriz_crear_rotz(i * M_PI / 3); [15]
-        matriz_t* tras = matriz_crear_tras(tiro_oblicuo); [15]
+        matriz_t* rotz = matriz_crear_rotz(i * M_PI / 3);
+        matriz_t* tras = matriz_crear_tras(tiro_oblicuo); 
 
         if (rotz == NULL || !apilar_transformacion(transformacion, rotz)) {
             desapilar_transformacion(transformacion); return false;
@@ -247,10 +247,10 @@ matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho) {
     matriz_t* pantalla = _matriz_crear(4, 4);
     if (pantalla == NULL) return NULL;
     set_id_mx(pantalla);
-    matriz_establecer(pantalla, 1, 1, altura / 2.0); [4]
-    matriz_establecer(pantalla, 2, 2, -(altura / 2.0)); [4]
-    matriz_establecer(pantalla, 2, 4, altura / 2.0); [4]
-    matriz_establecer(pantalla, 1, 4, ancho / 2.0); [4]
+    matriz_establecer(pantalla, 1, 1, altura / 2.0); 
+    matriz_establecer(pantalla, 2, 2, -(altura / 2.0));
+    matriz_establecer(pantalla, 2, 4, altura / 2.0); 
+    matriz_establecer(pantalla, 1, 4, ancho / 2.0); 
     return pantalla;
 } [4]
 
