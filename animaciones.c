@@ -1,236 +1,273 @@
 #include "animaciones.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include <math.h>
+#include <SDL2/SDL.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#include "matriz.h"
+#include "modelo.h"
+#include "pila.h"
+#include "lista.h"
+#include "mundo.h"
 
-// Estructura interna para los cristales rotos (2D en espacio de pantalla)
-typedef struct {
-    float x, y;
-    float vx, vy;
-    float rot;
-    float v_rot;
-    float tam;
-} cristal_t;
+/* --- Constantes y Tablas de Búsqueda --- */
+const float g = -9.81; [3]
+const float pos_rel_torreta[1] = {0, 0, 3}; [3]
+const float pos_rel_radar[1] = {-1.5, 0, 0.5}; [3]
 
-struct animacion_cristales {
-    cristal_t *particulas;
-    size_t cant;
-    float tiempo;
-};
+const char* etiquetas[] = {
+    [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
+    [CUBO1]="CUBO1", [CUBO2]="CUBO2", [CUBO3]="CUBO3", 
+    [PIRAMIDE1]="PIRAMIDE1", [PIRAMIDE2]="PIRAMIDE2", [PIRAMIDE3]="PIRAMIDE3",
+    [HORIZONTE]="HORIZONTE", [MONTANA]="MONTANA", [LUNA]="LUNA",
+    [RESTO1]="RESTO1", [RESTO2]="RESTO2"
+}; [3]
 
-void mi_dibujar_modelo_3d(SDL_Renderer *renderer, const modelo_t *mod, float x, float y, float phi, float rot_add, const matriz_t *matriz_vista);
+const unsigned char colores[][1] = {
+    [TANQUE]={255, 255, 255}, [TORRETA]={255, 255, 255}, [RADAR]={255, 255, 255},
+    [MISIL]={255, 0, 0}, [CUBO1]={0, 255, 0}, [CUBO2]={0, 255, 0}, [CUBO3]={0, 255, 0},
+    [PIRAMIDE1]={0, 255, 0}, [PIRAMIDE2]={0, 255, 0}, [PIRAMIDE3]={0, 255, 0},
+    [HORIZONTE]={255, 255, 255}, [MONTANA]={255, 255, 255}, [LUNA]={255, 255, 255},
+    [RESTO1]={255, 255, 255}, [RESTO2]={255, 255, 255}
+}; [4]
 
-animacion_cristales_t *animacion_cristales_crear(size_t cant) {
-    animacion_cristales_t *a = malloc(sizeof(animacion_cristales_t));
-    if (!a) return NULL;
-    a->particulas = malloc(sizeof(cristal_t) * cant);
-    if (!a->particulas) { free(a); return NULL; }
-    a->cant = cant;
-    a->tiempo = 0.0f;
+/* --- Gestión de la Pila de Transformaciones --- */
 
-    for (size_t i = 0; i < cant; i++) {
-        // Nacen en el centro de la pantalla o dispersos por el HUD
-        a->particulas[i].x = 0.0f;
-        a->particulas[i].y = 0.0f;
-        float angulo = ((float)rand() / RAND_MAX) * 2 * M_PI;
-        float velocidad = 150.0f + ((float)rand() / RAND_MAX) * 250.0f; // px/seg
-        a->particulas[i].vx = velocidad * cosf(angulo);
-        a->particulas[i].vy = velocidad * sinf(angulo);
-        a->particulas[i].rot = ((float)rand() / RAND_MAX) * 2 * M_PI;
-        a->particulas[i].v_rot = 3.0f + ((float)rand() / RAND_MAX) * 8.0f;
-        a->particulas[i].tam = 5.0f + ((float)rand() / RAND_MAX) * 12.0f;
+bool apilar_transformacion(pila_t* transformacion, matriz_t* matriz) {
+    if (pila_ver_tope(transformacion) == NULL) {
+        if (!pila_apilar(transformacion, matriz)) {
+            matriz_destruir(matriz);
+            return false;
+        }
+        return true;
     }
-    return a;
-}
-
-bool animacion_cristales_actualizar(animacion_cristales_t *a, float dt) {
-    if (!a) return false;
-    a->tiempo += dt;
-    if (a->tiempo > 1.2f) return false; // Dura 1.2 segundos
-
-    for (size_t i = 0; i < a->cant; i++) {
-        a->particulas[i].x += a->particulas[i].vx * dt;
-        a->particulas[i].y += a->particulas[i].vy * dt;
-        // Gravedad simulada en la pantalla hacia abajo
-        a->particulas[i].vy -= 300.0f * dt;
-        a->particulas[i].rot += a->particulas[i].v_rot * dt;
+    matriz_t* nuevo_top = matriz_multiplicar(pila_ver_tope(transformacion), matriz); [5]
+    if (nuevo_top == NULL) {
+        matriz_destruir(matriz);
+        return false;
+    }
+    matriz_destruir(matriz);
+    if (!pila_apilar(transformacion, nuevo_top)) {
+        matriz_destruir(nuevo_top);
+        return false;
     }
     return true;
-}
+} [5]
 
-void animacion_cristales_dibujar(const animacion_cristales_t *a, SDL_Renderer *renderer, int centro_x, int centro_y) {
-    if (!a) return;
-    SDL_SetRenderDrawColor(renderer, 200, 240, 255, 255); // Color cian/cristal brillante
-    for (size_t i = 0; i < a->cant; i++) {
-        float cx = centro_x + a->particulas[i].x;
-        float cy = centro_y - a->particulas[i].y; // Invertir Y para coordenadas SDL
-        float r = a->particulas[i].tam;
-        float rot = a->particulas[i].rot;
+void desapilar_transformacion(pila_t* transformacion) {
+    matriz_destruir(pila_desapilar(transformacion));
+} [5]
 
-        // Dibujar un pequeño triángulo o rombo por partícula girando
-        int x1 = cx + r * cosf(rot);
-        int y1 = cy + r * sinf(rot);
-        int x2 = cx + r * cosf(rot + 2.0f * M_PI / 3.0f);
-        int y2 = cy + r * sinf(rot + 2.0f * M_PI / 3.0f);
-        int x3 = cx + r * cosf(rot + 4.0f * M_PI / 3.0f);
-        int y3 = cy + r * sinf(rot + 4.0f * M_PI / 3.0f);
+bool apilar_rototraslacion(pila_t* transformacion, const float v[1], const float angz) {
+    matriz_t* tras = matriz_crear_tras(v); [6]
+    if (tras == NULL) return false;
+    if (!apilar_transformacion(transformacion, tras)) return false;
 
-        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
-        SDL_RenderDrawLine(renderer, x2, y2, x3, y3);
-        SDL_RenderDrawLine(renderer, x3, y3, x1, y1);
+    matriz_t* rotz = matriz_crear_rotz(angz); [6]
+    if (rotz == NULL || !apilar_transformacion(transformacion, rotz)) {
+        desapilar_transformacion(transformacion);
+        return false;
     }
-}
+    return true;
+} [6]
 
-void animacion_cristales_destruir(animacion_cristales_t *a) {
-    if (!a) return;
-    free(a->particulas);
-    free(a);
-}
+void desapilar_rototraslacion(pila_t* transformacion) {
+    desapilar_transformacion(transformacion);
+    desapilar_transformacion(transformacion);
+} [6]
 
-// Estructura interna para fragmentos rotatorios 3D del enemigo destrozado
-typedef struct {
-    float x1, y1, z1;
-    float x2, y2, z2;
-    float bx, by, bz;     // Baricentro original de la arista
-    float vx, vy, vz;     // Velocidad de expansión
-    float rot_intrinseca; // Ángulo de rotación sobre su propio centro
-    float vel_rot;        // Velocidad angular
-} fragmento_t;
+bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t* transformacion) {
+    float aux_ang[1] = {0, M_PI/2.0, M_PI/2.0}; [7]
+    if (t_mov != 0) aux_ang[2] -= random_float(0, 0.01); [7]
+    if (t_rot != 0) aux_ang[8] += random_float(0, 0.01); [7]
 
-struct animacion_enemigo {
-    fragmento_t *fragmentos;
-    size_t cant;
-    float tiempo;
-    float orig_x, orig_y; // Posición de la explosión en el mundo
-};
+    matriz_t* rotz = matriz_crear_rotz(aux_ang[8]);
+    matriz_t* roty = matriz_crear_roty(aux_ang[2]);
+    if (rotz == NULL || roty == NULL) {
+        matriz_destruir(rotz); matriz_destruir(roty);
+        return false;
+    }
 
-animacion_enemigo_t *animacion_enemigo_crear(const modelo_t *mod, float x, float y) {
-    if (!mod) return NULL;
-    animacion_enemigo_t *a = malloc(sizeof(animacion_enemigo_t));
-    if (!a) return NULL;
+    if (!apilar_transformacion(transformacion, rotz) || !apilar_transformacion(transformacion, roty)) {
+        return false;
+    }
 
-    size_t nlineas = modelo_nlineas(mod);
-    a->fragmentos = malloc(sizeof(fragmento_t) * nlineas);
-    if (!a->fragmentos) { free(a); return NULL; }
-    a->cant = nlineas;
-    a->tiempo = 0.0f;
-    a->orig_x = x;
-    a->orig_y = y;
+    matriz_t* tanque_ang = matriz_crear_rotz(-1 * tanque->angz); [7]
+    if (tanque_ang == NULL || !apilar_transformacion(transformacion, tanque_ang)) {
+        desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
+        return false;
+    }
 
-    const float *coords = modelo_coordenadas(mod);
-    const size_t *lineas = modelo_lineas(mod);
+    float pos_inv[1] = {-1 * tanque->pos, -1 * tanque->pos[2], -3}; [7]
+    matriz_t* tanque_pos = matriz_crear_tras(pos_inv); [7]
+    if (tanque_pos == NULL || !apilar_transformacion(transformacion, tanque_pos)) {
+        desapilar_transformacion(transformacion); desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
+        return false;
+    }
+    return true;
+} [7]
 
+void desapilar_cuadro_transformacion(pila_t* transformacion) {
+    for (int i = 0; i < 4; i++) desapilar_transformacion(transformacion);
+} [9]
+
+/* --- Motor de Renderizado 3D --- */
+
+void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[1], SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, color, color[2], color[8], 0x00); [10]
+    SDL_RenderDrawLine(renderer, 
+        matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1),
+        matriz_obtener(m, 1, coord2 + 1), matriz_obtener(m, 2, coord2 + 1));
+} [10]
+
+void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[1], SDL_Renderer* renderer) {
+    if (matriz_obtener(m, 3, coord1 + 1) < 1 || matriz_obtener(m, 3, coord2 + 1) < 1) {
+        return;
+    } [11]
+    dibujar_linea(m, coord1, coord2, color, renderer);
+} [11]
+
+bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    matriz_t* app = matriz_aplicar(pila_ver_tope(transformacion), modelo_obtener_coords(modelo)); [11]
+    if (app == NULL) return false;
+
+    matriz_t* print = matriz_multiplicar(pantalla, app); [11]
+    matriz_destruir(app);
+    if (print == NULL) return false;
+
+    size_t nlineas = modelo_obtener_nlineas(modelo);
     for (size_t i = 0; i < nlineas; i++) {
-        size_t idx1 = lineas[i * 2];
-        size_t idx2 = lineas[i * 2 + 1];
-
-        // Guardamos los vértices locales relativos al centro del tanque
-        a->fragmentos[i].x1 = coords[idx1 * 3];
-        a->fragmentos[i].y1 = coords[idx1 * 3 + 1];
-        a->fragmentos[i].z1 = coords[idx1 * 3 + 2];
-
-        a->fragmentos[i].x2 = coords[idx2 * 3];
-        a->fragmentos[i].y2 = coords[idx2 * 3 + 1];
-        a->fragmentos[i].z2 = coords[idx2 * 3 + 2];
-
-        // Calculamos el baricentro de la arista para saber la dirección de explosión
-        a->fragmentos[i].bx = (a->fragmentos[i].x1 + a->fragmentos[i].x2) / 2.0f;
-        a->fragmentos[i].by = (a->fragmentos[i].y1 + a->fragmentos[i].y2) / 2.0f;
-        a->fragmentos[i].bz = (a->fragmentos[i].z1 + a->fragmentos[i].z2) / 2.0f;
-
-        // Velocidad de expansión proporcional al baricentro + factor aleatorio
-        float factor = 5.0f + ((float)rand() / RAND_MAX) * 10.0f;
-        a->fragmentos[i].vx = a->fragmentos[i].bx * factor + (((float)rand() / RAND_MAX) - 0.5f) * 4.0f;
-        a->fragmentos[i].vy = a->fragmentos[i].by * factor + (((float)rand() / RAND_MAX) - 0.5f) * 4.0f;
-        a->fragmentos[i].vz = (a->fragmentos[i].bz + 1.0f) * factor;
-
-        a->fragmentos[i].rot_intrinseca = 0.0f;
-        a->fragmentos[i].vel_rot = 5.0f + ((float)rand() / RAND_MAX) * 15.0f; // rads/seg rápidos
+        size_t c1, c2;
+        modelo_obtener_linea(modelo, i, &c1, &c2);
+        dibujar_linea_3d(print, c1, c2, colores[bloque], renderer);
     }
-    return a;
-}
+    matriz_destruir(print);
+    return true;
+} [11]
 
-bool animacion_enemigo_actualizar(animacion_enemigo_t *a, float dt) {
-    if (!a) return false;
-    a->tiempo += dt;
-    if (a->tiempo > 2.0f) return false; // Dura 2 segundos estallando
+bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    if (!apilar_rototraslacion(transformacion, cuerpo->pos, cuerpo->angz)) return false; [12]
 
-    for (size_t i = 0; i < a->cant; i++) {
-        // Desplazar el baricentro por la velocidad de expansión
-        a->fragmentos[i].bx += a->fragmentos[i].vx * dt;
-        a->fragmentos[i].by += a->fragmentos[i].vy * dt;
-        a->fragmentos[i].bz += a->fragmentos[i].vz * dt;
-        // Gravedad sobre los fragmentos en el espacio 3D
-        a->fragmentos[i].vz -= 9.8f * dt;
+    modelo_t* modelo = buscar_bloque(cuerpo->bloque, modelos); [12]
+    if (modelo == NULL || !bloque_imprimir(cuerpo->bloque, modelo, transformacion, pantalla, renderer)) {
+        desapilar_rototraslacion(transformacion);
+        return false;
+    }
+    desapilar_rototraslacion(transformacion);
+    return true;
+} [12]
 
-        // Rotación intrínseca sobre sí misma
-        a->fragmentos[i].rot_intrinseca += a->fragmentos[i].vel_rot * dt;
+bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    lista_iter_t* iterador = lista_iter_crear(obstaculos);
+    while (!lista_iter_al_final(iterador)) {
+        if (!cuerpo_imprimir(lista_iter_ver_actual(iterador), modelos, transformacion, pantalla, renderer)) {
+            lista_iter_destruir(iterador);
+            return false;
+        }
+        lista_iter_avanzar(iterador);
+    }
+    lista_iter_destruir(iterador);
+    return true;
+} [13]
+
+bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    // 1. Cuerpo
+    if (!apilar_rototraslacion(transformacion, tanque->pos, tanque->angz)) return false; [13]
+    modelo_t* mod = buscar_bloque(TANQUE, modelos);
+    if (mod == NULL || !bloque_imprimir(TANQUE, mod, transformacion, pantalla, renderer)) {
+        desapilar_rototraslacion(transformacion); return false;
+    }
+
+    // 2. Torreta (Relativa al cuerpo)
+    mod = buscar_bloque(TORRETA, modelos);
+    if (mod == NULL || !apilar_rototraslacion(transformacion, pos_rel_torreta, tanque->ang_torreta)) {
+        desapilar_rototraslacion(transformacion); return false;
+    }
+    if (!bloque_imprimir(TORRETA, mod, transformacion, pantalla, renderer)) {
+        desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); return false;
+    }
+
+    // 3. Radar (Relativo a la torreta)
+    mod = buscar_bloque(RADAR, modelos);
+    if (mod == NULL || !apilar_rototraslacion(transformacion, pos_rel_radar, tanque->ang_radar)) {
+        desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); return false;
+    }
+    if (!bloque_imprimir(RADAR, mod, transformacion, pantalla, renderer)) {
+        desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); desapilar_rototraslacion(transformacion); 
+        return false;
+    }
+
+    for (int i = 0; i < 3; i++) desapilar_rototraslacion(transformacion);
+    return true;
+} [13]
+
+bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    bloque_t elementos[] = {HORIZONTE, MONTANA, LUNA}; [14]
+    for (int i = 0; i < 3; i++) {
+        modelo_t* mod = buscar_modelo(etiquetas[elementos[i]], modelos);
+        if (mod == NULL || !bloque_imprimir(elementos[i], mod, transformacion, pantalla, renderer)) {
+            return false;
+        }
     }
     return true;
-}
+} [14]
 
+/* --- Animación de Destrucción (Tiro Oblicuo) --- */
 
-void animacion_enemigo_dibujar(const animacion_enemigo_t *a, SDL_Renderer *renderer, const matriz_t *matriz_vista, int width, int height) {
-    if (!a || !matriz_vista) return;
+bool animacion_destruccion(float pos[1], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer) {
+    float t = (T_ANIM * JUEGO_FPS - t_animacion) / JUEGO_FPS; [15]
+    float tiro_oblicuo[1] = {t * V0X, 0, 3 + t * V0Z + 0.5 * g * t * t}; [15]
+    bloque_t bloques[16] = {RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR}; [15]
 
-    // Silenciamos los parámetros de ancho/alto que ya no usamos manualmente
-    (void)width;
-    (void)height;
+    matriz_t* tras_pos = matriz_crear_tras(pos);
+    if (tras_pos == NULL || !apilar_transformacion(transformacion, tras_pos)) return false;
 
-    // Iteramos por cada fragmento (arista) de la explosión
-    for (size_t i = 0; i < a->cant; i++) {
-        const fragmento_t *f = &a->fragmentos[i];
+    for (size_t i = 0; i < 6; i++) {
+        modelo_t* modelo = buscar_modelo(etiquetas[bloques[i]], modelos);
+        matriz_t* rotz = matriz_crear_rotz(i * M_PI / 3); [15]
+        matriz_t* tras = matriz_crear_tras(tiro_oblicuo); [15]
 
-        // 1. Calculamos la rotación intrínseca del fragmento sobre su propio baricentro
-        float c = cosf(f->rot_intrinseca), s = sinf(f->rot_intrinseca);
-
-        // Vértice 1 relativo y rotado
-        float rx1 = f->x1 - f->bx;
-        float ry1 = f->y1 - f->by;
-        float rot_x1 = rx1 * c - ry1 * s;
-        float rot_y1 = rx1 * s + ry1 * c;
-
-        // Vértice 2 relativo y rotado
-        float rx2 = f->x2 - f->bx;
-        float ry2 = f->y2 - f->by;
-        float rot_x2 = rx2 * c - ry2 * s;
-        float rot_y2 = rx2 * s + ry2 * c;
-
-        // 2. Posiciones finales en el espacio absoluto del mundo
-        float wx1 = rot_x1 + f->bx + a->orig_x;
-        float wy1 = rot_y1 + f->by + a->orig_y;
-        float wz1 = f->z1 + f->bz;
-
-        float wx2 = rot_x2 + f->bx + a->orig_x;
-        float wy2 = rot_y2 + f->by + a->orig_y;
-        float wz2 = f->z2 + f->bz;
-
-        // 3. Construimos un modelo_t ficticio en memoria estática que representa la línea
-        float coords[6] = {
-            wx1, wy1, wz1,  // Vértice 0
-            wx2, wy2, wz2   // Vértice 1
-        };
-        size_t lineas[2] = {0, 1}; // Conecta el vértice 0 con el 1
-
-        // Usamos tu constructor oficial para crear un objeto seguro
-        modelo_t *mod_fragmento = modelo_crear("FRAG", coords, 2, lineas, 1);
-        if (!mod_fragmento) continue;
-
-        // 4. Delegamos el dibujo a tu función del main.c que funciona perfecto.
-        // Ponemos un color verde brillante/amarillo clásico de Battlezone
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
-        mi_dibujar_modelo_3d(renderer, mod_fragmento, 0.0f, 0.0f, 0.0f, 0.0f, matriz_vista);
-
-        // Liberamos el modelo temporal inmediatamente para no perder memoria
-        modelo_destruir(mod_fragmento);
+        if (rotz == NULL || !apilar_transformacion(transformacion, rotz)) {
+            desapilar_transformacion(transformacion); return false;
+        }
+        if (tras == NULL || !apilar_transformacion(transformacion, tras) || !bloque_imprimir(bloques[i], modelo, transformacion, pantalla, renderer)) {
+            desapilar_transformacion(transformacion); desapilar_transformacion(transformacion); return false;
+        }
+        desapilar_transformacion(transformacion); desapilar_transformacion(transformacion);
     }
-}
+    desapilar_transformacion(transformacion);
+    return true;
+} [15]
 
-void animacion_enemigo_destruir(animacion_enemigo_t *a) {
-    if (!a) return;
-    free(a->fragmentos);
-    free(a);
-}
+/* --- Auxiliares --- */
+
+matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho) {
+    matriz_t* pantalla = _matriz_crear(4, 4);
+    if (pantalla == NULL) return NULL;
+    set_id_mx(pantalla);
+    matriz_establecer(pantalla, 1, 1, altura / 2.0); [4]
+    matriz_establecer(pantalla, 2, 2, -(altura / 2.0)); [4]
+    matriz_establecer(pantalla, 2, 4, altura / 2.0); [4]
+    matriz_establecer(pantalla, 1, 4, ancho / 2.0); [4]
+    return pantalla;
+} [4]
+
+modelo_t* buscar_modelo(const char* etiqueta, lista_t* modelos) {
+    lista_iter_t* iterador = lista_iter_crear(modelos);
+    while (!lista_iter_al_final(iterador)) {
+        modelo_t* modelo = lista_iter_ver_actual(iterador);
+        if (!strcmp(modelo_obtener_etiqueta(modelo), etiqueta)) {
+            lista_iter_destruir(iterador);
+            return modelo;
+        }
+        lista_iter_avanzar(iterador);
+    }
+    lista_iter_destruir(iterador);
+    return NULL;
+} [9]
+
+modelo_t* buscar_bloque(bloque_t bloque, lista_t* modelos) {
+    return buscar_modelo(etiquetas[bloque], modelos);
+} [10]

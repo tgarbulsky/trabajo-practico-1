@@ -7,96 +7,53 @@
 typedef struct lista lista_t;
 typedef struct lista_iter lista_iter_t;
 
-/*
- * Primitivas de lista simplemente enlazada
- */
+/* --- Primitivas de lista --- */
 
-// Crea una lista
-// Post: Se devuelve una nueva lista.
+// Crea una lista vacía.
 lista_t *lista_crear(void);
 
-// Verifica si la lista es vacía
-// Pre: la lista fue creada
+// Verifica si la lista está vacía.
 bool lista_esta_vacia(const lista_t *lista);
 
-// Agrega un elemento al principio de la lista
-// Pre: la lista fue creada
-// Post: se agregó un nodo con el dato recibido, al principio de la lista
+// Agrega un elemento al principio.
 bool lista_insertar_primero(lista_t *lista, void *dato);
 
-// Agrega un elemento al final de la lista
-// Pre: la lista fue creada
-// Post: se agregó un nodo con el dato recibido, al final de la lista
+// Agrega un elemento al final.
 bool lista_insertar_ultimo(lista_t *lista, void *dato);
 
-// Obtener largo
-// Pre: la lista fue creada
-// Post: devuelve la cantidad de elementos almacenados
+// Devuelve la cantidad de elementos.
 size_t lista_largo(const lista_t *lista);
 
-// Borra el primer elemento de la lista
-// Pre: la lista fue creada
-// Post: se eliminó el primer nodo de la lista. Devuelve el dato del nodo
-// borrado o NULL de no existir
+// Borra el primer elemento y devuelve su dato.
 void *lista_borrar_primero(lista_t *lista);
 
-// Destruye la lista
+// Destruye la lista y aplica destruir_dato a cada elemento si no es NULL.
 void lista_destruir(lista_t *lista, void (*destruir_dato)(void *));
 
-// Iterador interno de la lista.
-// Recorre la lista y para cada elemento de la misma llama a
-// la función visitar, pasándole por parámetro el elemento de la lista
-// (dato) y el parámetro extra.
-// El parámetro extra sirve para que la función visitar pueda recibir
-// información adicional. Puede ser NULL.
-// La función visitar debe devolver true si se debe seguir iterando,
-// false para cortar la iteración. No puede agregar ni quitar elementos
-// a la lista).
-// Pre: la lista fue creada.
-// Post: se llamó a la función visitar una vez por cada elemento de la lista,
-// en orden.
-void lista_recorrer(lista_t *lista,
-                  bool (*visitar)(void *dato, void *extra),
-                  void *extra);
+// Iterador interno: recorre la lista llamando a 'visitar' para cada dato.
+void lista_recorrer(lista_t *lista, bool (*visitar)(void *dato, void *extra), void *extra);
 
-/*
- * Primitivas de iteración
- */
+/* --- Primitivas de iteración externa --- */
 
-// Obtiene un iterador de la lista
-// Pre: la lista fue creada
-// Post: se devuelve un nuevo iterador
+// Crea un iterador para la lista.
 lista_iter_t *lista_iter_crear(lista_t *lista);
 
-// Avanza una posición en la lista
-// Pre: el iterador fue creado
-// Post: se avanzó la posición actual en el iterador. Devuelve false si ya
-// está al final de la lista
+// Avanza a la siguiente posición.
 bool lista_iter_avanzar(lista_iter_t *iter);
 
-// Almacena en dato el valor que se encuentra en la posición actual
-// Pre: el iterador fue creado
-// Post: se almacenó el dato actual en dato. Devuelve false si está al final
-// de la lista
+// Devuelve el dato de la posición actual.
 void *lista_iter_ver_actual(const lista_iter_t *iter);
 
-// Verifica si ya está al final de la lista
-// Pre: el iterador fue creado
+// Verifica si el iterador llegó al final de la lista.
 bool lista_iter_al_final(const lista_iter_t *iter);
 
-// Destruye el iterador de la lista
+// Destruye el iterador.
 void lista_iter_destruir(lista_iter_t *iter);
 
-// Agrega un elemento en la posición actual
-// Pre: el iterador fue creado
-// Post: se insertó un nuevo nodo antes de la posición actual, quedando este
-// nuevo nodo como posición actual
+// Inserta un elemento en la posición actual.
 bool lista_iter_insertar(lista_iter_t *iter, void *dato);
 
-// Elimina el elemento de la posición actual
-// Pre: el iterador fue creado
-// Post: se eliminó el nodo que se encontraba en la posición actual indicada por el
-// iterador. Devuelve NULL si el iterador está al final de la lista
+// Elimina el elemento en la posición actual.
 void *lista_iter_borrar(lista_iter_t *iter);
 
 #endif

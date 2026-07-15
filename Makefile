@@ -1,35 +1,50 @@
+# Nombre del ejecutable final
+TARGET = battlezone
+
+# Compilador y banderas
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -g $(shell sdl2-config --cflags)
-LDLIBS = $(shell sdl2-config --libs) -lm
+CFLAGS = -Wall -std=c11 -pedantic -g
+LDFLAGS = -lSDL2 -lm
 
-OBJS = main.o matriz.o pila.o lista.o cola.o modelo.o obstaculo.o \
-       tanque.o misil.o stl.o mundo.o animaciones.o
+# Lista de archivos objeto (.o) basados en nuestra modularización
+OBJS = main.o \
+       matriz.o \
+       pila.o \
+       lista.o \
+       modelo.o \
+       mundo.o \
+       tanque.o \
+       misil.o \
+       obstaculo.o \
+       interfaz_2d.o \
+       animaciones.o
 
-all: battlezone
+# Regla principal: compila todo y genera el ejecutable
+all: $(TARGET)
 
-battlezone: $(OBJS)
-	$(CC) $(OBJS) -o battlezone $(LDLIBS)
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# Reglas para cada archivo objeto
+# Nota: La magia de las reglas implícitas de make se encarga del resto, 
+# pero las listamos para asegurar las dependencias.
 
-main.o: main.c modelo.h obstaculo.h tanque.h stl.h matriz.h pila.h lista.h mundo.h animaciones.h
+main.o: main.c mundo.h graficos.h matriz.h modelo.h lista.h pila.h
 matriz.o: matriz.c matriz.h
 pila.o: pila.c pila.h
 lista.o: lista.c lista.h
-cola.o: cola.c cola.h
-modelo.o: modelo.c modelo.h lista.h
-obstaculo.o: obstaculo.c obstaculo.h modelo.h
-tanque.o: tanque.c tanque.h obstaculo.h modelo.h misil.h matriz.h
-misil.o: misil.c misil.h matriz.h
-stl.o: stl.c stl.h
-mundo.o: mundo.c mundo.h lista.h tanque.h obstaculo.h modelo.h misil.h stl.h
-animaciones.o: animaciones.c animaciones.h
+modelo.o: modelo.c modelo.h matriz.h
+mundo.o: mundo.c mundo.h matriz.h modelo.h pila.h lista.h
+tanque.o: tanque.c tanque.h mundo.h
+misil.o: misil.c misil.h mundo.h
+obstaculo.o: obstaculo.c obstaculo.h mundo.h
+interfaz_2d.o: interfaz_2d.c interfaz_2d.h graficos.h
+animaciones.o: animaciones.c animaciones.h mundo.h matriz.h pila.h
 
-valgrind: battlezone
-	valgrind --leak-check=full --show-leak-kinds=all ./battlezone
-
+# Regla para limpiar los archivos temporales y el ejecutable
 clean:
-	rm -f *.o battlezone
+	rm -f $(OBJS) $(TARGET)
 
-.PHONY: all clean valgrind
+# Regla para ejecutar con Valgrind y las supresiones
+valgrind: $(TARGET)
+	valgrind --leak-check=full --suppressions=suppressions_20261_tp1.supp ./$(TARGET)

@@ -1,42 +1,33 @@
 #ifndef MATRIZ_H
 #define MATRIZ_H
 
-#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
 
-// TDA Matriz dinámico.
 typedef struct matriz matriz_t;
 
-// Crea una matriz de filas x columnas inicializada en cero.
-matriz_t *matriz_crear(size_t filas, size_t columnas);
+// Creadores y Destructor [1-3]
+matriz_t *_matriz_crear(size_t n, size_t m);
+void matriz_destruir(void *matriz);
+matriz_t *matriz_crear_proy(size_t n);
+matriz_t *matriz_crear_rotz(double angz);
+matriz_t *matriz_crear_roty(double angy);
+matriz_t *matriz_crear_rotx(double angx);
+matriz_t *matriz_crear_tras(const float vector[4]);
+matriz_t *matriz_crear_escalar(size_t n, float* factor);
 
-// Crea la matriz identidad de n x n.
-matriz_t *matriz_crear_identidad(size_t n);
+// Getters y Setters [1, 5, 6]
+size_t matriz_filas(const matriz_t *matriz);
+size_t matriz_columnas(const matriz_t *matriz);
+float matriz_obtener(const matriz_t *matriz, size_t fila, size_t columna);
+void matriz_establecer(matriz_t *matriz, size_t fila, size_t columna, float valor);
+void set_id_mx(matriz_t* mx_s);
 
-// Crea la matriz de traslación de 3x3 para coordenadas homogéneas 2D.
-matriz_t *matriz_crear_traslacion(float tx, float ty);
-
-// Crea la matriz de rotación de 3x3 en el eje Z (para el plano 2D del juego).
-matriz_t *matriz_crear_rotacion(float angulo);
-
-// Crea la matriz de escalado de 3x3.
-matriz_t *matriz_crear_escalado(float factor);
-
-// Destruye la matriz. Acepta NULL.
-void matriz_destruir(matriz_t *m);
-
-// Getters de dimensiones.
-size_t matriz_filas(const matriz_t *m);
-size_t matriz_columnas(const matriz_t *m);
-
-// Getters y Setters
-float matriz_obtener(const matriz_t *m, size_t fila, size_t columna);
-void matriz_establecer(matriz_t *m, size_t fila, size_t columna, float valor);
-
-// Multiplica a x b y devuelve una matriz nueva.
+// Operaciones [6, 7]
 matriz_t *matriz_multiplicar(const matriz_t *a, const matriz_t *b);
+matriz_t *matriz_aplicar(const matriz_t *matriz, const matriz_t *ps);
+matriz_t *matriz_extender(const matriz_t *matriz);
 
-// Aplica la transformación m (3x3) a un punto de dos coordenadas (x, y).
-// Modifica los valores apuntados por x e y directamente (estilo Nico).
-void matriz_aplicar(const matriz_t *m, float *x, float *y);
-
-#endif // MATRIZ_H
+#endif

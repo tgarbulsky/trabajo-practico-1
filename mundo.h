@@ -1,26 +1,62 @@
 #ifndef MUNDO_H
 #define MUNDO_H
 
+#include "matriz.h"
+#include "modelo.h"
+#include "pila.h"
+#include "lista.h"
 #include <stdbool.h>
-#include <SDL2/SDL.h>
+#include <math.h>
 
-// Estructura opaca que contiene todo el estado del juego
-typedef struct mundo mundo_t;
+/* --- Constantes del Juego --- */
+#define VENTANA_ALTO 768
+#define VENTANA_ANCHO 1024
+#define JUEGO_FPS 24
+#define NRO_OBSTACULOS 50
 
-// Crea el mundo e inicializa las listas dinámicas, el tanque principal y carga los modelos STL
-mundo_t *mundo_crear(void);
+/* --- Constantes Físicas --- */
+#define V_TANQUE 7          // m/s
+#define WZ_TANQUE 0.36      // rad/s
+#define V_MISIL 24          // m/s
+#define HITBOX_MISIL 3      // Radio de colisión misil
+#define HITBOX_COLISION 5   // Radio de colisión tanque
+#define VIDAS 4
+#define SCORE_INC 1000
 
-// Libera absolutamente toda la memoria del mundo (listas, tanques, misiles y modelos)
-void mundo_destruir(mundo_t *mundo);
+/* --- Enumerativos --- */
+enum bloques { TANQUE, TORRETA, RADAR, MISIL, CUBO1, CUBO2, CUBO3, 
+               PIRAMIDE1, PIRAMIDE2, PIRAMIDE3, HORIZONTE, MONTANA, LUNA };
+typedef enum bloques bloque_t;
 
-// Corre un paso de la simulación física e IA usando el delta de tiempo (dt)
-// También procesa las colisiones exactas siguiendo la lógica de Nico
-void mundo_actualizar(mundo_t *mundo, float dt);
+enum tras { TRAS_NONE, TRAS_FWD, TRAS_BWD };
+enum rot { ROT_NONE, ROT_CW, ROT_CCW };
+enum turr { TURR_NONE, TURR_ON_CW, TURR_ON_CCW, TURR_OFF };
 
-// Renderiza todas las entidades del juego aplicando sus matrices de transformación
-void mundo_dibujar(mundo_t *mundo, SDL_Renderer *renderer);
+/* --- Estructuras --- */
+typedef struct cuerpo {
+    bloque_t bloque;
+    float pos[3];
+    float angz;
+} cuerpo_t;
 
-// Permite disparar un misil desde el tanque del jugador
-void mundo_jugador_disparar(mundo_t *mundo);
+typedef struct tanque {
+    float pos[3];
+    float angz;
+    float ang_torreta;
+    float ang_radar;
+} tanque_t;
 
-#endif // MUNDO_H
+/* --- Primitivas de Física y Colisión --- */
+float norma_r3(float v1[3], float v2[3]);
+bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox);
+
+/* --- Primitivas de Creación --- */
+cuerpo_t* crear_obstaculo();
+tanque_t* crear_tanque(float x, float y, float angz);
+tanque_t* crear_tanque_enemigo(float x_fp, float y_fp, lista_t* obstaculos);
+
+/* --- Lógica y Movimiento --- */
+void tanque_mover(tanque_t* tanque, enum tras tras, lista_t* obstaculos, tanque_t* otro_tanque);
+bool misil_mover(cuerpo_t* misil, lista_t* obstaculos, tanque_t* otro_tanque, bool* kill);
+
+#endif

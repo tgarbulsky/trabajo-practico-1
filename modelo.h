@@ -1,29 +1,56 @@
 #ifndef MODELO_H
 #define MODELO_H
 
-#include <stddef.h>
-#include <stdbool.h>
-#include <SDL2/SDL.h>
 #include "matriz.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
-// Estructura opaca para representar la malla geométrica de un objeto
+// Enumerativo de unidades según el formato STL
+enum unidades {MM, CM, M, IN, FT, MILS, UNITS}; 
+typedef enum unidades unidades_t;
+
+// Tabla de búsqueda de nombres de unidades
+extern const char *units[];
+
 typedef struct modelo modelo_t;
 
-// Crea un modelo vacío reservando memoria para una cantidad específica de puntos (vértices)
-modelo_t *modelo_crear(size_t cantidad_puntos);
+/* --- Primitivas de Archivo --- */
 
-// Destruye el modelo y libera su memoria asociada
-void modelo_destruir(modelo_t *m);
+// Verifica el encabezado y formato del archivo STL binario.
+// Asigna en 'unidades' y 'maxlong' los valores leídos.
+bool verificar_stl(FILE* f, unidades_t* unidades, size_t* maxlong);
 
-// Permite establecer las coordenadas de un punto específico del modelo
-// Pre: indice < cantidad_puntos
-void modelo_establecer_punto(modelo_t *m, size_t indice, float x, float y);
+// Lee un modelo del archivo f.
+// Pre: El archivo debe estar abierto en modo binario.
+modelo_t* leer_modelo(FILE* f, size_t maxlong, unidades_t unidades);
 
-// Obtiene la cantidad de puntos que componen el modelo
-size_t modelo_obtener_cantidad_puntos(const modelo_t *m);
+// Libera la memoria asociada al modelo.
+void destruir_modelo(void* modelo);
 
-// Dibuja el modelo en la pantalla utilizando SDL2.
-// Aplica la matriz de transformación dada (que combina posición, rotación y escala de la entidad).
-void modelo_dibujar(const modelo_t *m, const matriz_t *transformacion, SDL_Renderer *renderer);
+/* --- Getters --- */
 
-#endif // MODELO_H
+// Devuelve la matriz de coordenadas (puntos 3D) del modelo.
+matriz_t* modelo_obtener_coords(modelo_t* modelo);
+
+// Obtiene una coordenada específica en el arreglo coord[2].
+void modelo_obtener_coord(modelo_t* modelo, size_t fila, float coord[2]);
+
+// Devuelve la cantidad total de puntos (coordenadas).
+size_t modelo_ncoords(modelo_t* modelo);
+
+// Devuelve el arreglo de índices que definen las líneas.
+size_t* modelo_obtener_lineas(modelo_t* modelo);
+
+// Obtiene los índices de los dos puntos que forman la línea 'linea'.
+void modelo_obtener_linea(modelo_t* modelo, size_t linea, size_t* coord1, size_t* coord2);
+
+// Devuelve la cantidad de líneas que componen el modelo.
+size_t modelo_obtener_nlineas(modelo_t* modelo);
+
+// Devuelve la etiqueta (nombre) del modelo (ej: "TANQUE").
+char* modelo_obtener_etiqueta(modelo_t* modelo);
+
+#endif
