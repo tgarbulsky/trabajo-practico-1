@@ -9,7 +9,7 @@
 
 //begin codigo alumno
 #include "mundo.h"
-#include "graficos.h"
+#include "animaciones.h"
 #include "matriz.h"
 #include "modelo.h"
 #include "lista.h"
