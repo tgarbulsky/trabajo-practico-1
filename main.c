@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
             if (state[SDL_SCANCODE_SPACE] && t_cooldown_jugador == 0 && misil_jugador == NULL) {
                 misil_jugador = malloc(sizeof(cuerpo_t));
                 misil_jugador->bloque = MISIL;
-                misil_jugador->pos = jugador->pos;
-                misil_jugador->pos = jugador->pos;
-                misil_jugador->pos = 3;
+                misil_jugador->pos[0] = jugador->pos[0];
+                misil_jugador->pos[1] = jugador->pos[1];
+                misil_jugador->pos[2] = 3;
                 misil_jugador->angz = jugador->angz;
                 t_cooldown_jugador = COOLDOWN * JUEGO_FPS;
             }
@@ -135,9 +135,9 @@ int main(int argc, char *argv[]) {
                     if (kill) {
                         score += SCORE_INC;
                         t_destruccion_enemigo = T_ANIM * JUEGO_FPS;
-                        pos_destruccion = enemigo->pos;
-                        pos_destruccion = enemigo->pos;
-                        pos_destruccion = enemigo->pos;
+                        pos_destruccion[0] = enemigo->pos[0];
+                        pos_destruccion[1] = enemigo->pos[1];
+                        pos_destruccion[2] = enemigo->pos[2];
                         free(enemigo);
                         enemigo = crear_tanque_enemigo(jugador->pos[0], jugador->pos[1], obstaculos);
                     }
