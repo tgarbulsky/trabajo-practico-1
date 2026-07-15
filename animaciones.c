@@ -19,19 +19,39 @@ const float pos_rel_torreta[3] = {0, 0, 3};
 const float pos_rel_radar[3] = {-1.5, 0, 0.5};
 
 const char* etiquetas[] = {
-    [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
-    [CUBO1]="CUBO1", [CUBO2]="CUBO2", [CUBO3]="CUBO3", 
-    [PIRAMIDE1]="PIRAMIDE1", [PIRAMIDE2]="PIRAMIDE2", [PIRAMIDE3]="PIRAMIDE3",
-    [HORIZONTE]="HORIZONTE", [MONTANA]="MONTANA", [LUNA]="LUNA",
-    [RESTO1]="RESTO1", [RESTO2]="RESTO2"
+    [TANQUE]="TANQUE", 
+    [TORRETA]="TORRETA", 
+    [RADAR]="RADAR", 
+    [MISIL]="MISIL",
+    [CUBO1]="CUBO1", 
+    [CUBO2]="CUBO2", 
+    [CUBO3]="CUBO3", 
+    [PIRAMIDE1]="PIRAMIDE1", 
+    [PIRAMIDE2]="PIRAMIDE2", 
+    [PIRAMIDE3]="PIRAMIDE3",
+    [HORIZONTE]="HORIZONTE", 
+    [MONTANA]="MONTANA", 
+    LUNA]="LUNA",
+    [RESTO1]="RESTO1", 
+    [RESTO2]="RESTO2"
 };
 
-const unsigned char colores[] = {
-    [TANQUE]={255, 255, 255}, [TORRETA]={255, 255, 255}, [RADAR]={255, 255, 255},
-    [MISIL]={255, 0, 0}, [CUBO1]={0, 255, 0}, [CUBO2]={0, 255, 0}, [CUBO3]={0, 255, 0},
-    [PIRAMIDE1]={0, 255, 0}, [PIRAMIDE2]={0, 255, 0}, [PIRAMIDE3]={0, 255, 0},
-    [HORIZONTE]={255, 255, 255}, [MONTANA]={255, 255, 255}, [LUNA]={255, 255, 255},
-    [RESTO1]={255, 255, 255}, [RESTO2]={255, 255, 255}
+const unsigned char colores[][3] = {
+    [TANQUE]={255, 255, 255}, 
+    [TORRETA]={255, 255, 255},     
+    [RADAR]={255, 255, 255},
+    [MISIL]={255, 0, 0}, 
+    [CUBO1]={0, 255, 0}, 
+    [CUBO2]={0, 255, 0}, 
+    [CUBO3]={0, 255, 0},
+    [PIRAMIDE1]={0, 255, 0}, 
+    [PIRAMIDE2]={0, 255, 0}, 
+    [PIRAMIDE3]={0, 255, 0},
+    [HORIZONTE]={255, 255, 255}, 
+    [MONTANA]={255, 255, 255}, 
+    [LUNA]={255, 255, 255},
+    [RESTO1]={255, 255, 255}, 
+    [RESTO2]={255, 255, 255}
 };
 
 //--- gestion de la pila de transformaciones ---/
