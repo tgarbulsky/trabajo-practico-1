@@ -104,8 +104,8 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
     if (t_mov != 0) aux_ang -= random_float(0, 0.01);
     if (t_rot != 0) aux_ang += random_float(0, 0.01);
 
-    matriz_t* rotz = matriz_crear_rotz(aux_ang);
-    matriz_t* roty = matriz_crear_roty(aux_ang);
+    matriz_t* rotz = matriz_crear_rotz(aux_ang[2]);
+    matriz_t* roty = matriz_crear_roty(aux_ang[1]);
     if (rotz == NULL || roty == NULL) {
         matriz_destruir(rotz); matriz_destruir(roty);
         return false;
@@ -121,7 +121,7 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
         return false;
     }
 
-    float pos_inv[] = {-1 * tanque->pos, -1 * tanque->pos[1], -3};
+    float pos_inv[3] = {-1 * tanque->pos[0], -1 * tanque->pos[1], -3};
     matriz_t* tanque_pos = matriz_crear_tras(pos_inv);
     if (tanque_pos == NULL || !apilar_transformacion(transformacion, tanque_pos)) {
         desapilar_transformacion(transformacion); 
