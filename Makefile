@@ -16,8 +16,8 @@ OBJS = main.o \
        tanque.o \
        misil.o \
        obstaculo.o \
-       interfaz_2d.o \
-       animaciones.o
+       interfaz2d.o \
+       animaciones.o \
 
 # Regla principal
 all: $(TARGET)
@@ -36,7 +36,7 @@ mundo.o: mundo.c mundo.h matriz.h modelo.h pila.h lista.h
 tanque.o: tanque.c tanque.h mundo.h
 misil.o: misil.c misil.h mundo.h
 obstaculo.o: obstaculo.c obstaculo.h mundo.h
-interfaz_2d.o: interfaz_2d.c interfaz_2d.h animaciones.h
+interfaz2d.o: interfaz2d.c interfaz2d.h animaciones.h
 animaciones.o: animaciones.c animaciones.h mundo.h matriz.h pila.h
 
 clean:
