@@ -10,7 +10,7 @@
 #include "lista.h"
 #include "mundo.h"
 
-/* --- Gestión de la Pila de Transformaciones --- */
+// --- Gestión de la Pila de Transformaciones --- //
 
 /**
  * @brief Si la pila está vacía, asigna la matriz en el tope. 
@@ -45,7 +45,7 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
  */
 void desapilar_cuadro_transformacion(pila_t* transformacion);
 
-/* --- Motor de Renderizado 3D --- */
+// --- Motor de Renderizado 3D --- //
 
 /**
  * @brief Dibuja una línea en coordenadas de pantalla.
@@ -82,14 +82,14 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
  */
 bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer);
 
-/* --- Animaciones de Destrucción --- */
+// --- Animaciones de Destrucción --- //
 
 /**
  * @brief Calcula y dibuja la animación de tiro oblicuo de las piezas del tanque enemigo [9].
  */
 bool animacion_destruccion(float pos[2], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer);
 
-/* --- Funciones Auxiliares --- */
+// --- Funciones Auxiliares --- //
 
 /**
  * @brief Crea la matriz necesaria para transformar coordenadas de mundo a píxeles de pantalla [10].

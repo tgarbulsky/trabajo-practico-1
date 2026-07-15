@@ -13,9 +13,10 @@
 #include "mundo.h"
 
 //--- constantes y tablas de busqueda ---//
+#define T_ANIM 2
 const float g = -9.81; 
 const float pos_rel_torreta = {0, 0, 3}; 
-const float pos_rel_radar = {-1.5, 0, 0.5}; 
+const float pos_rel_radar = {-1.5, 0, 0.5};
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", [TORRETA]="TORRETA", [RADAR]="RADAR", [MISIL]="MISIL",
