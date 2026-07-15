@@ -23,6 +23,7 @@
 #define HITBOX_COLISION 5   // Radio de colisión tanque
 #define VIDAS 4
 #define SCORE_INC 1000
+#define T_MUERTE 27
 
 // --- Enumerativos --- //
 enum bloques { TANQUE, TORRETA, RADAR, MISIL, CUBO1, CUBO2, CUBO3, 
