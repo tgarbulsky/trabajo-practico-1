@@ -6,7 +6,7 @@
 #include "lista.h"
 #include "matriz.h"
 
-/* --- Constantes del Tanque --- */
+// --- Constantes del Tanque --- //
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -19,14 +19,14 @@
 #define T_ACCION 0.5        // Duración de los movimientos del jugador 
 #define COOLDOWN 2          // Tiempo de enfriamiento del disparo 
 
-/* --- Enumerativos para Control y IA --- */
+// --- Enumerativos para Control y IA --- //
 enum tras { TRAS_NONE, TRAS_FWD, TRAS_BWD }; // Movimiento lineal 
 enum rot { ROT_NONE, ROT_CW, ROT_CCW };     // Rotación del cuerpo 
 enum turr { TURR_NONE, TURR_ON_CW, TURR_ON_CCW, TURR_OFF }; // Estado torreta 
 enum acciones_ia { IA_NONE, IA_FWD, IA_BWD, IA_CW, IA_CCW }; // Acciones del enemigo 
 enum enemy_to { FRONT, LEFT, RIGHT, BACK }; // Posición relativa para el HUD 
 
-/* --- Estructura del Tanque --- */
+// --- Estructura del Tanque --- //
 typedef struct tanque {
     float pos[3];       // x, y, z 
     float angz;         // Ángulo phi del cuerpo 
