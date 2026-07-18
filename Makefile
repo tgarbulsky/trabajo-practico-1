@@ -3,21 +3,11 @@ TARGET = battlezone
 
 # compilador y flags
 CC = gcc
-CFLAGS = -Wall -std=c99 -pedantic -g
+CFLAGS = -Wall -Werror -std=c99 -pedantic -fno-extended-identifiers -g
 LDFLAGS = -lSDL2 -lm
 
-# lista de archivos objeto
-OBJS = main.o \
-       matriz.o \
-       pila.o \
-       lista.o \
-       modelo.o \
-       mundo.o \
-       tanque.o \
-       misil.o \
-       obstaculo.o \
-       interfaz2d.o \
-       animaciones.o
+# lista de archivos objs
+OBJS = main.o matriz.o pila.o lista.o modelo.o mundo.o tanque.o misil.o obstaculo.o interfaz2d.o animaciones.o
 
 .PHONY: all clean clean_objs valgrind
 
