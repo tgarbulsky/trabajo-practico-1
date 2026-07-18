@@ -35,13 +35,7 @@ typedef struct tanque {
 } tanque_t;
 
 
-//---randomizadores---//
-// Genera un número aleatorio flotante entre 0 y 1
-float random_01();
-// Genera un número aleatorio flotante
-float random_float(float a, float b);
-// Genera un número aleatorio entero
-int random_int(int a, int b);
+
 
 /* --- Primitivas de Creación --- */
 
