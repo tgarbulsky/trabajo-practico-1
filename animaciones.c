@@ -20,7 +20,12 @@ const float pos_rel_radar[3] = {-1.5, 0, 0.5};
 const float V0X = 10.0;
 const float V0Z = 15.0;
 
-const char* enemy_rel_pos[];
+const char* enemy_rel_pos[] = {
+    [FRONT] = "FRONT",
+    [LEFT]  = "LEFT",
+    [RIGHT] = "RIGHT",
+    [BACK]  = "BACK"
+};
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", 
