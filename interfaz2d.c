@@ -12,7 +12,7 @@
 // Tabla de búsqueda para los mensajes de posición del enemigo
 extern const char* enemy_rel_pos[];
 
-/* --- Funciones Auxiliares de Dibujo y Búsqueda --- */
+// --- Funciones Auxiliares de Dibujo y Búsqueda --- //
 
 // Busca un modelo por su etiqueta en la lista cargada
 static modelo_t* buscar_modelo_local(const char* etiqueta, lista_t* modelos) {
@@ -29,7 +29,7 @@ static modelo_t* buscar_modelo_local(const char* etiqueta, lista_t* modelos) {
     return NULL;
 }
 
-/* --- Primitivas de Impresión 2D --- */
+// --- Primitivas de Impresión 2D --- //
 
 // Imprime un solo carácter escalado y posicionado en píxeles
 bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer) {
@@ -139,7 +139,7 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
 
 // Dibuja el efecto de vidrio roto '#' y la leyenda de GAME OVER [6, 18, 19]
 bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, SDL_Renderer* renderer) {
-    size_t n = T_MUERTE - t_muerte + 1; // n aumenta para dibujar el modelo '#' de a una línea 
+    size_t n = T_MUERTE - t_muerte + 1; // n aumenta para  el modelo '#' de a una línea 
     unsigned char color[3] = {255, 0, 0};
     float factor[4] = {escala, -1 * escala, 1, 1};
     float pos[3] = {VENTANA_ANCHO / 2, VENTANA_ALTO / 2, 0};
@@ -175,7 +175,7 @@ bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, 
     matriz_destruir(escalada);
     if (app == NULL) return false;
 
-    // Dibujar el vidrio roto progresivamente
+    //  el vidrio roto progresivamente
     size_t nlineas = modelo_obtener_nlineas(modelo);
     for (size_t i = 0; i < nlineas && i < n; i++) {
         size_t coord1, coord2;
