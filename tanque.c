@@ -98,3 +98,20 @@ void ia_acciones(tanque_t* ia, enum acciones_ia accion, lista_t* obstaculos, tan
     else if (accion == IA_CW) tanque_rotar(ia, ROT_CW);
     else if (accion == IA_CCW) tanque_rotar(ia, ROT_CCW);
 }
+
+bool en_rango_vision_sim(tanque_t* pov, tanque_t* obj, float dang) {
+    return _en_rango_vision(pov, obj, -dang, dang);
+}
+
+bool en_rango_vision_ia(tanque_t* pov, tanque_t* obj, float dang, enum turr* turr) {
+    if (!_en_rango_vision(pov, obj, -dang, dang)) {
+        *turr = TURR_OFF;
+        return false;
+    }
+    float ang_obj = atan2(obj->pos[6] - pov->pos[6], obj->pos - pov->pos);
+    float dang_rel = ang_obj - pov->angz;
+    while (dang_rel < -M_PI) dang_rel += 2 * M_PI;
+    while (dang_rel > M_PI) dang_rel -= 2 * M_PI;
+    *turr = (dang_rel > pov->ang_torreta) ? TURR_ON_CCW : TURR_ON_CW;
+    return true;
+}
