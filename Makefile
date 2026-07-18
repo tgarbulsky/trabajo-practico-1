@@ -3,7 +3,7 @@ TARGET = battlezone
 
 # compilador y flags
 CC = gcc
-CFLAGS = -Wall -std=c11 -pedantic -g
+CFLAGS = -Wall -std=c99 -pedantic -g
 LDFLAGS = -lSDL2 -lm
 
 # lista de archivos objeto
