@@ -9,7 +9,7 @@
 #include "mundo.h"
 #include "animaciones.h"
 
-// Tabla de búsqueda para los mensajes de posición del enemigo
+// Tabla de buqueda para los mensajes de posición del enemigo
 extern const char* enemy_rel_pos[];
 
 // --- Funciones Auxiliares de Dibujo y Búsqueda --- //
