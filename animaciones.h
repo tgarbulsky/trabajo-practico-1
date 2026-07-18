@@ -22,11 +22,11 @@ extern const char* etiquetas[];
 extern const unsigned char colores[][3];
 extern const char* enemy_rel_pos[];
 
-// --- Gestión de la Pila de Transformaciones --- //
+// --- Gestion de la Pila de Transformaciones --- //
 
 // Si la pila está vacía, asigna la matriz en el tope. 
 // Si no, asigna como nuevo tope el producto del tope anterior con la matriz.
-//return true si tuvo éxito, false en caso de falla de memoria.
+//return true si tuvo exito, false en caso de falla de memoria.
 
 bool apilar_transformacion(pila_t* transformacion, matriz_t* matriz);
 
@@ -46,7 +46,7 @@ void desapilar_rototraslacion(pila_t* transformacion);
 bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t* transformacion);
 
 
-//Desapila la transformación de cuadro completa (cuatro matrices).
+//Desapila la transformación de cuadro completa (viste que eran cuatro matrices).
 void desapilar_cuadro_transformacion(pila_t* transformacion);
 
 // --- Motor de Renderizado 3D --- //
@@ -55,7 +55,7 @@ void desapilar_cuadro_transformacion(pila_t* transformacion);
 void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer);
 
 
-// Dibuja una línea proyectada descartando puntos con Z < 1 (detrás de la cámara)
+// Dibuja una línea proyectada descartando puntos con Z < 1
 void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer);
 
 //Aplica la transformación actual e imprime un bloque específico del modelo.
@@ -70,7 +70,7 @@ bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion,
 bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer);
 
 
-//Imprime el tanque completo (Cuerpo, Torreta y Radar) aplicando transformaciones relativas [7].
+//Imprime el tanque completo aplicando transformaciones relativas.
 bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer);
 
 
@@ -82,7 +82,7 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
 //Calcula y dibuja la animacion de tiro oblicuo de las piezas del tanque enemigo
 bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer);
 
-// --- Funciones Auxiliares --- //
+// --- Funciones auxiliares --- //
 
 //Crea la matriz necesaria para transformar coordenadas de mundo a píxeles de pantalla
 matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho);
