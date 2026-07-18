@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     float pos_destruccion[6];
 
     cuerpo_t* misil_jugador = NULL;
-    cuerpo_t* misil_enemigo = NULL;
+    //cuerpo_t* misil_enemigo = NULL;
     
     enum acciones_ia ia_accion = IA_NONE;
     int t_accion_ia = 0;
