@@ -3,20 +3,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-//---primitivas de aleatoriedad---//
-// Definición de primitivas de aleatoridad
-float random_01(){
-    return rand()/(RAND_MAX+1.0);
-}
-
-float random_float(float a, float b){
-    return random_01()*(b-a) + a;
-}
-
-int random_int(int a, int b){
-    return rand() % (b-a+1) + a;
-}
-
 //---Primitivas de Creación---//
 tanque_t* crear_tanque(float x, float y, float angz) {
     tanque_t* tanque = malloc(sizeof(tanque_t));
