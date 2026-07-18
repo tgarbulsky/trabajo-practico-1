@@ -21,6 +21,7 @@
 extern const char* etiquetas[];
 extern const unsigned char colores[][3];
 extern const char* enemy_rel_pos[];
+extern const VOX; 
 
 // --- Gestion de la Pila de Transformaciones --- //
 
