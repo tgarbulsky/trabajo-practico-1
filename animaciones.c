@@ -17,6 +17,8 @@
 const float g = -9.81; 
 const float pos_rel_torreta[3] = {0, 0, 3}; 
 const float pos_rel_radar[3] = {-1.5, 0, 0.5};
+const float V0X = 10.0;
+const float V0Z = 15.0;
 
 const char* etiquetas[] = {
     [TANQUE]="TANQUE", 
