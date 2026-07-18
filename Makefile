@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -Wall -std=c11 -pedantic -g
 LDFLAGS = -lSDL2 -lm
 
-#lista de archivos objeto
+# lista de archivos objeto
 OBJS = main.o \
        matriz.o \
        pila.o \
@@ -19,6 +19,8 @@ OBJS = main.o \
        interfaz2d.o \
        animaciones.o
 
+.PHONY: all clean clean_objs valgrind
+
 # Regla principal
 all: $(TARGET)
 
@@ -26,7 +28,6 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # Reglas para cada archivo objeto
-
 main.o: main.c mundo.h animaciones.h matriz.h modelo.h lista.h pila.h
 matriz.o: matriz.c matriz.h
 pila.o: pila.c pila.h
@@ -45,6 +46,6 @@ clean:
 clean_objs:
 	rm -f $(OBJS)
 
-#Valgrind y las supresiones
+# Valgrind y las supresiones
 valgrind: $(TARGET)
 	valgrind --leak-check=full --suppressions=suppressions_20261_tp1.supp ./$(TARGET)
