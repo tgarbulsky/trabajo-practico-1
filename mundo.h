@@ -37,6 +37,11 @@ typedef struct cuerpo {
     float angz;
 } cuerpo_t;
 
+//---randomizadores---//
+float random_01();
+float random_float(float a, float b);
+int random_int(int a, int b);
+
 // --- Primitivas de Física y Colisión --- //
 float norma_r3(float v1[3], float v2[3]);
 bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox);
