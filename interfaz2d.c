@@ -29,12 +29,6 @@ static modelo_t* buscar_modelo_local(const char* etiqueta, lista_t* modelos) {
     return NULL;
 }
 
-// Dibuja una línea directamente en coordenadas de pantalla
-void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 0x00);
-    SDL_RenderDrawLine(renderer, matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1), matriz_obtener(m, 1, coord2 + 1), matriz_obtener(m, 2, coord2 + 1));
-}
-
 /* --- Primitivas de Impresión 2D --- */
 
 // Imprime un solo carácter escalado y posicionado en píxeles
