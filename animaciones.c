@@ -148,7 +148,7 @@ void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned cha
     SDL_RenderDrawLine(renderer, matriz_obtener(m, 1, coord1 + 1), matriz_obtener(m, 2, coord1 + 1), matriz_obtener(m, 1, coord2 + 1), matriz_obtener(m, 2, coord2 + 1));
 }
 
-void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color, SDL_Renderer* renderer) {
+void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer) {
     if (matriz_obtener(m, 3, coord1 + 1) < 1 || matriz_obtener(m, 3, coord2 + 1) < 1) {
         return;
     }
