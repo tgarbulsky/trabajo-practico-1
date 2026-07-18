@@ -17,7 +17,7 @@ OBJS = main.o \
        misil.o \
        obstaculo.o \
        interfaz2d.o \
-       animaciones.o \
+       animaciones.o
 
 # Regla principal
 all: $(TARGET)
