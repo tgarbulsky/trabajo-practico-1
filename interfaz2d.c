@@ -7,6 +7,7 @@
 #include "modelo.h"
 #include "lista.h"
 #include "mundo.h"
+#include "animaciones.h"
 
 // Tabla de búsqueda para los mensajes de posición del enemigo
 extern const char* enemy_rel_pos[];
