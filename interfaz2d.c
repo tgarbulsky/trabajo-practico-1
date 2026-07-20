@@ -4,7 +4,7 @@
 bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer){
     float factor[4]={escala, -1*escala, 1, 1};
     char s[2]={c, '\0'};
-    float pos[3]={xy[0], xy[1], 0};
+    float posicion[3]={xy[0], xy[1], 0};
     matriz_t* esc=matriz_crear_escalar(4, factor);
     if(esc==NULL){
         return false;
@@ -25,7 +25,7 @@ bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3]
     if(escalada==NULL){
         return false;
     }
-    matriz_t* tras=matriz_crear_tras(pos);
+    matriz_t* tras=matriz_crear_tras(posicion);
     if(tras==NULL){
         matriz_destruir(escalada);
         return false;
@@ -58,7 +58,7 @@ bool imprimir_cadena(const char* s, float escala, float xy[2], float incx, unsig
     return true;
 }
 
-bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char scope, lista_t* modelos, SDL_Renderer* renderer){
+bool imprimir_hud(char vidas, unsigned long score, enum enemigo_to enemigo_posicion, char scope, lista_t* modelos, SDL_Renderer* renderer){
     float escala=25;
     float incx=25;
     float incy=50;
@@ -87,11 +87,11 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
     }
     xy[0]=5*incx;
     xy[1]-=incy;
-    if(!imprimir_cadena("ENEMY TO ", escala, xy, incx, color, modelos, renderer)){
+    if(!imprimir_cadena("enemigo TO ", escala, xy, incx, color, modelos, renderer)){
         return false;
     }
     xy[0]+=9*incx;
-    if(!imprimir_cadena(enemy_rel_pos[enemy_pos], escala, xy, incx, color, modelos, renderer)){
+    if(!imprimir_cadena(enemigo_relativa_posicion[enemigo_posicion], escala, xy, incx, color, modelos, renderer)){
         return false;
     }
     xy[0]=VENTANA_ANCHO/2;
@@ -107,7 +107,7 @@ bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, 
     size_t n=T_MUERTE-t_muerte+1;
     unsigned char color[3]={255, 0, 0};
     float factor[4]={escala, -1*escala, 1, 1};
-    float pos[3]={VENTANA_ANCHO/2, VENTANA_ALTO/2, 0};
+    float posicion[3]={VENTANA_ANCHO/2, VENTANA_ALTO/2, 0};
     matriz_t* esc=matriz_crear_escalar(4, factor);
     if(esc==NULL){
         return false;
@@ -128,7 +128,7 @@ bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, 
     if(escalada==NULL){
         return false;
     }
-    matriz_t* tras=matriz_crear_tras(pos);
+    matriz_t* tras=matriz_crear_tras(posicion);
     if(tras==NULL){
         matriz_destruir(escalada);
         return false;
