@@ -1,5 +1,5 @@
 #include "interfaz2d.h"
-#include "animaciones.h" /* Para buscar_modelo */
+#include "animaciones.h"
 
 bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer){
     float factor[4]={escala, -1*escala, 1, 1};
@@ -59,11 +59,11 @@ bool imprimir_cadena(const char* s, float escala, float xy[2], float incx, unsig
 }
 
 bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char scope, lista_t* modelos, SDL_Renderer* renderer){
-    float escala=25; //Tune
-    float incx=25; //Tune
-    float incy=50; //Tune
-    float xy[2]={VENTANA_ANCHO-5*incx, 2*incy}; //Tune
-    unsigned char color[3]={255, 0, 0}; //Tune
+    float escala=25;
+    float incx=25;
+    float incy=50;
+    float xy[2]={VENTANA_ANCHO-5*incx, 2*incy};
+    unsigned char color[3]={255, 0, 0};
     size_t i=0;
     if(vidas>0){
         for(i=0; i<vidas-1; i++){
@@ -75,17 +75,17 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
         xy[0]+=2*i*incx;
     }
     xy[1]+=incy;
-    xy[0]=VENTANA_ANCHO-9*incx; //Tune
+    xy[0]=VENTANA_ANCHO-9*incx;
     char num[20];
     snprintf(num, 20, "%lu", score);
     if(!imprimir_cadena(num, escala, xy, incx, color, modelos, renderer)){
         return false;
     }
-    xy[0]=VENTANA_ANCHO-15*incx; //Tune
+    xy[0]=VENTANA_ANCHO-15*incx;
     if(!imprimir_cadena("SCORE ", escala, xy, incx, color, modelos, renderer)){
         return false;
     }
-    xy[0]=5*incx; //Tune
+    xy[0]=5*incx;
     xy[1]-=incy;
     if(!imprimir_cadena("ENEMY TO ", escala, xy, incx, color, modelos, renderer)){
         return false;
@@ -94,9 +94,9 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
     if(!imprimir_cadena(enemy_rel_pos[enemy_pos], escala, xy, incx, color, modelos, renderer)){
         return false;
     }
-    xy[0]=VENTANA_ANCHO/2; //Tune
-    xy[1]=VENTANA_ALTO/2; //Tune
-    escala=25; //Tune
+    xy[0]=VENTANA_ANCHO/2;
+    xy[1]=VENTANA_ALTO/2;
+    escala=25;
     if(!imprimir_caracter(scope, escala, xy, color, modelos, renderer)){
         return false;
     }
@@ -105,9 +105,9 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char
 
 bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, SDL_Renderer* renderer){
     size_t n=T_MUERTE-t_muerte+1;
-    unsigned char color[3]={255, 0, 0}; //Tune
+    unsigned char color[3]={255, 0, 0};
     float factor[4]={escala, -1*escala, 1, 1};
-    float pos[3]={VENTANA_ANCHO/2, VENTANA_ALTO/2, 0}; //Tune
+    float pos[3]={VENTANA_ANCHO/2, VENTANA_ALTO/2, 0};
     matriz_t* esc=matriz_crear_escalar(4, factor);
     if(esc==NULL){
         return false;
@@ -147,9 +147,9 @@ bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, 
     }
     matriz_destruir(app);
     if(vidas==0){
-        float escala_cadena = 25; //Tune
-        float incx_cadena = 25; //Tune
-        float xy_cadena[2]={VENTANA_ANCHO/2 - 5.5*incx_cadena, VENTANA_ALTO/2 + incx_cadena/2}; //Tune
+        float escala_cadena = 25;
+        float incx_cadena = 25;
+        float xy_cadena[2]={VENTANA_ANCHO/2 - 5.5*incx_cadena, VENTANA_ALTO/2 + incx_cadena/2};
         if(!imprimir_cadena("GAME OVER", escala_cadena, xy_cadena, incx_cadena, color, modelos, renderer)){
             return false;
         }
