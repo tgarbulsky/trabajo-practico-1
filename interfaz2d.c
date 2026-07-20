@@ -147,10 +147,13 @@ bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, 
     }
     matriz_destruir(app);
     if(vidas==0){
-        float escala_cadena = 25;
-        float incx_cadena = 25;
-        float xy_cadena[2]={VENTANA_ANCHO/2 - 5.5*incx_cadena, VENTANA_ALTO/2 + incx_cadena/2};
-        if(!imprimir_cadena("GAME OVER", escala_cadena, xy_cadena, incx_cadena, color, modelos, renderer)){
+        float escala_cadena = 70.0f; 
+        float incx_cadena = 70.0f; 
+        float xy_cadena[2]={VENTANA_ANCHO/2 - 5.5f*incx_cadena, VENTANA_ALTO/2 + incx_cadena/2};
+        
+        unsigned char color_blanco[3] = {255, 255, 255};
+        
+        if(!imprimir_cadena("GAME OVER", escala_cadena, xy_cadena, incx_cadena, color_blanco, modelos, renderer)){
             return false;
         }
     }
