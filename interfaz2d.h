@@ -25,7 +25,7 @@ bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3]
 bool imprimir_cadena(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
 
 // Renderiza la interfaz de usuario completa (vidas, puntaje, indicador de enemigo y mira)
-bool imprimir_hud(char vidas, unsigned long score, enum enemigo_to enemigo_posicion, char scope, lista_t* modelos, SDL_Renderer* renderer);
+bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemigo_posicion, char scope, lista_t* modelos, SDL_Renderer* renderer);
 
 // Reproduce la animacion 2D en pantalla cuando el jugador pierde una vida
 bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, SDL_Renderer* renderer);
