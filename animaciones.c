@@ -2,8 +2,8 @@
 
 // Constantes globales y configuracion de objetos, etiquetas y colores
 const float g = -9.81;
-const float pos_rel_torreta[3]={0, 0, 3};
-const float pos_rel_radar[3]={-1.5, 0, 0.5};
+const float posicion_relativa_torreta[3]={0, 0, 3};
+const float posicion_relativa_radar[3]={-1.5, 0, 0.5};
 
 const char* etiquetas[] = { 
 	[TANQUE]="TANQUE",
@@ -41,7 +41,7 @@ const unsigned char colores[][3] = {
 	[RESTO2]={255, 255, 255},
 };
 
-const char* enemy_rel_pos[]={
+const char* enemy_relativa_posicion[]={
     [FRONT]="FRONT",
     [BACK]="REAR",
     [LEFT]="LEFT",
@@ -144,13 +144,13 @@ bool apilar_cuadro_transformacion(int t_mov, int t_rot, tanque_t* tanque, pila_t
         desapilar_transformacion(transformacion);
         return false;
     }
-    float pos[3]={
-        -1*tanque->pos[0],
-        -1*tanque->pos[1],
+    float posicion[3]={
+        -1*tanque->posicion[0],
+        -1*tanque->posicion[1],
         -3,
     };
-    matriz_t* tanque_pos=matriz_crear_tras(pos);
-    if(tanque_pos==NULL || !apilar_transformacion(transformacion, tanque_pos)){
+    matriz_t* tanque_posicion=matriz_crear_tras(posicion);
+    if(tanque_posicion==NULL || !apilar_transformacion(transformacion, tanque_posicion)){
         desapilar_transformacion(transformacion);
         desapilar_transformacion(transformacion);
         desapilar_transformacion(transformacion);
@@ -220,7 +220,7 @@ bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, 
 }
 
 bool cuerpo_imprimir(cuerpo_t* cuerpo, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
-    if(!apilar_rototraslacion(transformacion, cuerpo->pos, cuerpo->angz)){
+    if(!apilar_rototraslacion(transformacion, cuerpo->posicion, cuerpo->angz)){
         return false;
     }
     modelo_t* modelo=buscar_bloque(cuerpo->bloque, modelos);
@@ -250,7 +250,7 @@ bool imprimir_obstaculos(lista_t* obstaculos, lista_t* modelos, pila_t* transfor
 }
 
 bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
-    if(!apilar_rototraslacion(transformacion, tanque->pos, tanque->angz)){
+    if(!apilar_rototraslacion(transformacion, tanque->posicion, tanque->angz)){
         return false;
     }
     modelo_t* modelo=buscar_bloque(TANQUE, modelos);
@@ -267,7 +267,7 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
         desapilar_rototraslacion(transformacion);
         return false;
     }
-    if(!apilar_rototraslacion(transformacion, pos_rel_torreta, tanque->ang_torreta)){
+    if(!apilar_rototraslacion(transformacion, posicion_relativa_torreta, tanque->ang_torreta)){
         desapilar_rototraslacion(transformacion);
         return false;
     }
@@ -282,7 +282,7 @@ bool tanque_imprimir(tanque_t* tanque, lista_t* modelos, pila_t* transformacion,
         desapilar_rototraslacion(transformacion);
         return false;
     }
-    if(!apilar_rototraslacion(transformacion, pos_rel_radar, tanque->ang_radar)){
+    if(!apilar_rototraslacion(transformacion, posicion_relativa_radar, tanque->ang_radar)){
         desapilar_rototraslacion(transformacion);
         desapilar_rototraslacion(transformacion);
         return false;
@@ -316,15 +316,15 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
 }
 
 // Animacion de destruccion con fisica de tiro parabolico y rotaciones
-bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
+bool animacion_destruccion(float posicion[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
     float t=(T_ANIM*JUEGO_FPS-t_animacion)/JUEGO_FPS;
     float tiro_oblicuo[3]={t*V0X, 0, 3+t*V0Z+0.5*g*t*t};
     float velocidad_angular = 5.0f;
     float angulo_rotacion = t * velocidad_angular;
 
     bloque_t bloques[6]={RESTO1, RESTO2, TORRETA, RESTO1, RESTO2, RADAR};
-    matriz_t* tras_pos=matriz_crear_tras(pos);
-    if(tras_pos==NULL || !apilar_transformacion(transformacion, tras_pos)){
+    matriz_t* tras_posicion=matriz_crear_tras(posicion);
+    if(tras_posicion==NULL || !apilar_transformacion(transformacion, tras_posicion)){
         return false;
     }
     for(size_t i=0; i<6; i++){
