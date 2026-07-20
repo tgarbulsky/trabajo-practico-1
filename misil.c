@@ -1,18 +1,16 @@
 #include "misil.h"
-#include <math.h>
 
-bool misil_mover(cuerpo_t* misil, lista_t* obstaculos, tanque_t* otro_tanque, bool* kill) {
-    float dt = 1.0 / JUEGO_FPS;
-    float new_x = misil->pos[0] + cos(misil->angz) * V_MISIL * dt;
-    float new_y = misil->pos[1] + sin(misil->angz) * V_MISIL * dt;
-    float new_pos[3]= {new_x, new_y, 0};
-    if (!colisiones(obstaculos, NULL, new_pos, HITBOX_MISIL)) {
-        if (!colisiones(NULL, otro_tanque->pos, new_pos, HITBOX_MISIL)) {
+bool misil_mover(cuerpo_t* misil, lista_t* obstaculos, tanque_t* otro_tanque, bool* kill){
+    float new_x=misil->pos[0]+cos(misil->angz)*V_MISIL*1.0/JUEGO_FPS;
+    float new_y=misil->pos[1]+sin(misil->angz)*V_MISIL*1.0/JUEGO_FPS;
+    float new_pos[3]={new_x, new_y, 0};
+    if(!colisiones(obstaculos, NULL, new_pos, HITBOX_MISIL)){
+        if(!colisiones(obstaculos, otro_tanque->pos, new_pos, HITBOX_MISIL)){
             misil->pos[0] = new_x;
             misil->pos[1] = new_y;
-            return true;
+            return true;    
         }
-        *kill = true; 
+        *kill=true;
     }
     return false;
 }
