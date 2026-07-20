@@ -53,10 +53,10 @@ matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho){
         return NULL;
     }
     set_id_mx(pantalla);
-    matriz_establecer(pantalla, 1, 1, altura/2.0); //escala
-    matriz_establecer(pantalla, 2, 2, -(altura/2.0)); //escala y reflexion
-    matriz_establecer(pantalla, 2, 4, altura/2.0); //offset
-    matriz_establecer(pantalla, 1, 4, ancho/2.0); //offset
+    matriz_establecer(pantalla, 1, 1, altura/2.0);
+    matriz_establecer(pantalla, 2, 2, -(altura/2.0));
+    matriz_establecer(pantalla, 2, 4, altura/2.0);
+    matriz_establecer(pantalla, 1, 4, ancho/2.0);
     return pantalla;
 }
 
@@ -313,8 +313,6 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
 bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
     float t=(T_ANIM*JUEGO_FPS-t_animacion)/JUEGO_FPS;
     float tiro_oblicuo[3]={t*V0X, 0, 3+t*V0Z+0.5*g*t*t};
-    
-    // velocidad angular de rotacion para las piezas voladoras
     float velocidad_angular = 5.0f;
     float angulo_rotacion = t * velocidad_angular;
 
@@ -330,42 +328,38 @@ bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila
             return false;
         }
         
-        // Rotacion radial de la explosion
         matriz_t* rotz=matriz_crear_rotz(i*M_PI/3);
         if(rotz==NULL || !apilar_transformacion(transformacion, rotz)){
             desapilar_transformacion(transformacion);
             return false;
         }
         
-        //traslacion del tiro oblicuo
         matriz_t* tras=matriz_crear_tras(tiro_oblicuo);
         if(tras==NULL || !apilar_transformacion(transformacion, tras)){
             desapilar_transformacion(transformacion);
             return false;
         }
 
-        //rotacion sobre su propio eje en el aire
         matriz_t* rot_propia = (i % 2 == 0) ? matriz_crear_rotz(angulo_rotacion) : matriz_crear_roty(angulo_rotacion);
         if(rot_propia==NULL || !apilar_transformacion(transformacion, rot_propia)){
-            desapilar_transformacion(transformacion); // saca tras
-            desapilar_transformacion(transformacion); // saca rotz
-            desapilar_transformacion(transformacion); // saca tras_pos
+            desapilar_transformacion(transformacion);
+            desapilar_transformacion(transformacion);
+            desapilar_transformacion(transformacion);
             return false;
         }
 
-        //imprimir el bloque con las transformaciones combinadas
         if (!bloque_imprimir(bloques[i], modelo, transformacion, pantalla, renderer)){
-            desapilar_transformacion(transformacion); // saca rot_propia
-            desapilar_transformacion(transformacion); // saca tras
-            desapilar_transformacion(transformacion); // saca rotz
-            desapilar_transformacion(transformacion); // saca tras_pos
+            desapilar_transformacion(transformacion);
+            desapilar_transformacion(transformacion);
+            desapilar_transformacion(transformacion);
+            desapilar_transformacion(transformacion);
             return false;
         }
         
-        desapilar_transformacion(transformacion); // libera rot_propia
-        desapilar_transformacion(transformacion); // libera tras
-        desapilar_transformacion(transformacion); // libera rotz
+        desapilar_transformacion(transformacion);
+        desapilar_transformacion(transformacion);
+        desapilar_transformacion(transformacion);
     }
-    desapilar_transformacion(transformacion); // libera tras_pos
+    desapilar_transformacion(transformacion);
     return true;
 }
