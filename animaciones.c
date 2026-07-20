@@ -1,5 +1,6 @@
 #include "animaciones.h"
 
+// Constantes globales y configuracion de objetos, etiquetas y colores
 const float g = -9.81;
 const float pos_rel_torreta[3]={0, 0, 3};
 const float pos_rel_radar[3]={-1.5, 0, 0.5};
@@ -47,6 +48,7 @@ const char* enemy_rel_pos[]={
     [RIGHT]="RIGHT",
 };
 
+// Funciones para manipular la pila de transformaciones y matrices
 matriz_t* matriz_crear_pantalla(unsigned int altura, unsigned int ancho){
     matriz_t* pantalla=_matriz_crear(4, 4);
     if(pantalla==NULL){
@@ -164,6 +166,7 @@ void desapilar_cuadro_transformacion(pila_t* transformacion){
     desapilar_transformacion(transformacion);
 }
 
+// Búsqueda de modelos en las listas del juego
 modelo_t* buscar_modelo(const char* etiqueta, lista_t* modelos){
     lista_iter_t* iterador=lista_iter_crear(modelos);
     while(!lista_iter_al_final(iterador)){
@@ -182,6 +185,7 @@ modelo_t* buscar_bloque(bloque_t bloque, lista_t* modelos){
     return buscar_modelo(etiquetas[bloque], modelos);
 }
 
+// Dibujado de lineas basicas con filtro de profundidad en Z
 void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer){
     SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], 0x00);
     SDL_RenderDrawLine(renderer, matriz_obtener(m, 1, coord1+1), matriz_obtener(m, 2, coord1+1), matriz_obtener(m, 1, coord2+1), matriz_obtener(m, 2, coord2+1));
@@ -194,6 +198,7 @@ void dibujar_linea_3d(matriz_t* m, size_t coord1, size_t coord2, const unsigned 
     dibujar_linea(m, coord1, coord2, color, renderer);
 }
 
+// Renderizado de modelos, elementos del escenario y del jugador
 bool bloque_imprimir(bloque_t bloque, modelo_t* modelo, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
     matriz_t* app=matriz_aplicar(pila_ver_tope(transformacion), modelo_obtener_coords(modelo));
     if(app==NULL){
@@ -310,6 +315,7 @@ bool mundo_imprimir(lista_t* modelos, pila_t* transformacion, matriz_t* pantalla
     return true;
 }
 
+// Animacion de destruccion con fisica de tiro parabolico y rotaciones
 bool animacion_destruccion(float pos[3], int t_animacion, lista_t* modelos, pila_t* transformacion, matriz_t* pantalla, SDL_Renderer* renderer){
     float t=(T_ANIM*JUEGO_FPS-t_animacion)/JUEGO_FPS;
     float tiro_oblicuo[3]={t*V0X, 0, 3+t*V0Z+0.5*g*t*t};
