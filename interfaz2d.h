@@ -1,35 +1,29 @@
-#ifndef INTERFAZ_2D_H
-#define INTERFAZ_2D_H
+#ifndef INTERFAZ2D_H
+#define INTERFAZ2D_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include <SDL2/SDL.h>
-#include <stdbool.h>
-#include <stdbool.h>
-#include "tanque.h"
+
 #include "matriz.h"
-#include "lista.h"
-#include "mundo.h"
 #include "modelo.h"
+#include "mundo.h"
+#include "lista.h"
 
+/*Declaración de constantes y tablas externas necesarias*/
+extern const char* enemy_rel_pos[];
 
-/* --- Métodos de impresión 2D --- */
+/*Funciones internas de dibujo plano*/
+void dibujar_linea(matriz_t* m, size_t coord1, size_t coord2, const unsigned char color[3], SDL_Renderer* renderer);
 
-
-//Imprime el carácter c aplicando un factor de escala en la posición (x, y) de la pantalla.
-//Las fuentes definen xy como un arreglo de 2 flotantes y color como un arreglo de 3 bytes.
+/*Métodos de impresión 2D*/
 bool imprimir_caracter(char c, float escala, float xy[2], unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
-
-
-//Imprime una cadena de caracteres con su primer elemento en la posición (x, y).
 bool imprimir_cadena(const char* s, float escala, float xy[2], float incx, unsigned char color[3], lista_t* modelos, SDL_Renderer* renderer);
-
-
-//Imprime la interfaz: posición del enemigo, vidas, puntuación y mira.
-//Requiere el enum enemy_to definido en tanque.h
 bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemy_pos, char scope, lista_t* modelos, SDL_Renderer* renderer);
 
-/* --- Animaciones --- */
-
-//Dibuja la animación de muerte del jugador (vidrio roto '#').
+/*Animaciones 2D planos*/
 bool animacion_muerte(int t_muerte, float escala, char vidas, lista_t* modelos, SDL_Renderer* renderer);
 
 #endif
