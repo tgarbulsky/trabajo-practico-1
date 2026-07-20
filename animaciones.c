@@ -41,7 +41,7 @@ const unsigned char colores[][3] = {
 	[RESTO2]={255, 255, 255},
 };
 
-const char* enemy_relativa_posicion[]={
+const char* enemigo_relativa_posicion[]={
     [FRONT]="FRONT",
     [BACK]="REAR",
     [LEFT]="LEFT",
