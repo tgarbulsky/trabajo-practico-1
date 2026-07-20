@@ -152,7 +152,7 @@ void decidir_accion_ia(enum acciones_ia* accion, int* t_accion_ia, tanque_t* ia,
     }
     int p=random_int(0, JUEGO_FPS);
     if(p==1){ 
-        float p2=random_01();
+        float p2=random_entre01();
         if(p2>0.5){ 
             if(_en_rango_vision(ia, fp, 0, M_PI)){
                 *accion=IA_CCW;
