@@ -2,9 +2,8 @@
 #define OBSTACULO_H
 
 #include "mundo.h"
-#include "lista.h"
 
-// Crea y devuelve la lista de 50 obstáculos aleatorios del juego.
-lista_t* inicializar_obstaculos();
+// primitiva de creación de obstáculos
+cuerpo_t* crear_obstaculo();
 
 #endif
