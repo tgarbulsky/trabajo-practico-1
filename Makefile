@@ -1,41 +1,31 @@
-# Nombre del ejecutable final
-TARGET = battlezone
-
-# compilador y flags
 CC = gcc
-CFLAGS = -Wall -Werror -std=c99 -pedantic -fno-extended-identifiers -g
-LDFLAGS = -lSDL2 -lm
+CFLAGS = -Wall -Werror -std=c99 -pedantic -g
+LDLIBS = -lSDL2 -lm
+OBJS = matriz.o modelo.o lista.o pila.o mundo.o animaciones.o interfaz2d.o tanque.o misil.o obstaculo.o main.o
+PROGRAM = battlezone
 
-# lista de archivos objs
-OBJS = main.o matriz.o pila.o lista.o modelo.o mundo.o tanque.o misil.o obstaculo.o interfaz2d.o animaciones.o
+all: $(PROGRAM)
 
-.PHONY: all clean clean_objs valgrind
+$(PROGRAM): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDLIBS)
 
-# Regla principal
-all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
-
-# Reglas para cada archivo objeto
-main.o: main.c mundo.h animaciones.h matriz.h modelo.h lista.h pila.h
 matriz.o: matriz.c matriz.h
-pila.o: pila.c pila.h
-lista.o: lista.c lista.h
 modelo.o: modelo.c modelo.h matriz.h
-mundo.o: mundo.c mundo.h matriz.h modelo.h pila.h lista.h
-tanque.o: tanque.c tanque.h mundo.h
-misil.o: misil.c misil.h mundo.h
-obstaculo.o: obstaculo.c obstaculo.h mundo.h
-interfaz2d.o: interfaz2d.c interfaz2d.h animaciones.h
-animaciones.o: animaciones.c animaciones.h mundo.h matriz.h pila.h
+lista.o: lista.c lista.h
+pila.o: pila.c pila.h
+mundo.o: mundo.c mundo.h modelo.h matriz.h lista.h pila.h
+animaciones.o: animaciones.c animaciones.h modelo.h matriz.h pila.h
+interfaz2d.o: interfaz2d.c interfaz2d.h modelo.h
+tanque.o: tanque.c tanque.h modelo.h lista.h
+misil.o: misil.c misil.h modelo.h lista.h tanque.h
+obstaculo.o: obstaculo.c obstaculo.h modelo.h
+main.o: main.c mundo.h modelo.h matriz.h lista.h pila.h animaciones.h interfaz2d.h tanque.h misil.h obstaculo.h
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(PROGRAM)
 
-clean_objs:
-	rm -f $(OBJS)
-
-# Valgrind y las supresiones
-valgrind: $(TARGET)
-	valgrind --leak-check=full --suppressions=suppressions_20261_tp1.supp ./$(TARGET)
+.PHONY: all clean
