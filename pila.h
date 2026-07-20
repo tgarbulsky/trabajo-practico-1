@@ -2,7 +2,6 @@
 #define PILA_H
 
 #include <stdbool.h>
-#include <stdlib.h>
 
 typedef struct pila pila_t;
 
@@ -27,10 +26,13 @@ bool pila_apilar(pila_t *pila, void *valor);
 // Obtiene el valor del tope de la pila. Si la pila tiene elementos,
 // se devuelve el valor del tope. Si está vacía devuelve NULL.
 // Pre: la pila fue creada.
+// Post: se devolvió el valor del tope de la pila, cuando la pila no está
+// vacía, NULL en caso contrario.
 void *pila_ver_tope(const pila_t *pila);
 
 // Saca el elemento tope de la pila. Si la pila tiene elementos, se quita el
-// tope de la pila, y se devuelve ese valor. Si está vacía, devuelve NULL.
+// tope de la pila, y se devuelve ese valor. Si la pila está vacía, devuelve
+// NULL.
 // Pre: la pila fue creada.
 // Post: si la pila no estaba vacía, se devuelve el valor del tope anterior
 // y la pila contiene un elemento menos.
