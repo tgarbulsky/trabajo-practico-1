@@ -28,6 +28,16 @@
 
 int main(int argc, char *argv[]) {
     
+    SDL_Init(SDL_INIT_VIDEO);
+
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    SDL_Event event;
+
+    SDL_CreateWindowAndRenderer(VENTANA_ANCHO, VENTANA_ALTO, 0, &window, &renderer);
+    SDL_SetWindowTitle(window, "Battle Zone");
+
+    int dormir = 0;
     // BEGIN código del alumno
     /*Inicialización*/
     
@@ -156,17 +166,6 @@ int main(int argc, char *argv[]) {
     /*Fin de inicialización*/
     // END código del alumno
     
-    SDL_Init(SDL_INIT_VIDEO);
-
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    SDL_Event event;
-
-    SDL_CreateWindowAndRenderer(VENTANA_ANCHO, VENTANA_ALTO, 0, &window, &renderer);
-    SDL_SetWindowTitle(window, "Battle Zone");
-
-    int dormir = 0;
-
     unsigned int ticks = SDL_GetTicks();
     while(1) {
         if(SDL_PollEvent(&event)) {
