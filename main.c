@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     bool enemigo_vivo = false; //Estado del enemigo
     int t_animacion = 0; //Tiempo de animacion de destruccion enemiga en cuadros
     int t_muerte = 0; //Tiempo de animación de muerte del jugador
-    enum enemigo_to enemigo_posicion = FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
+    enum enemy_to enemigo_posicion = FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
     char scope = '-'; //Caracter de modelo de mira
 
     //Inicialización de cuerpos
