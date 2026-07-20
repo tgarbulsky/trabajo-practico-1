@@ -1,6 +1,6 @@
 #include "mundo.h"
 
-float random_01(){
+float random_entre01(){
     return rand()/(RAND_MAX+1.0);
 }
 
