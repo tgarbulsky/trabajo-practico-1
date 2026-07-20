@@ -19,16 +19,16 @@ float norma_r3(float v1[3], float v2[3]){
     return pow(dx*dx+dy*dy+dz*dz, 0.5);
 }
 
-bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox){
+bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float posicion[3], float hitbox){
     if(otros_colisionables!=NULL){
-        if(norma_r3(pos,otros_colisionables)<hitbox){
+        if(norma_r3(posicion,otros_colisionables)<hitbox){
             return true;
         }
     }
     lista_iter_t* iterador=lista_iter_crear(obstaculos);
     while(!lista_iter_al_final(iterador)){
         cuerpo_t* obstaculo=lista_iter_ver_actual(iterador);
-        if(norma_r3(pos, obstaculo->pos)<hitbox){
+        if(norma_r3(posicion, obstaculo->posicion)<hitbox){
             lista_iter_destruir(iterador);
             return true;
         }
