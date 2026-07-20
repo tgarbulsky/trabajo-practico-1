@@ -5,7 +5,7 @@ float random_entre01(){
 }
 
 float random_float(float a, float b){
-    return random_01()*(b-a) + a;
+    return random_entre01()*(b-a) + a;
 }
 
 int random_int(int a, int b){
