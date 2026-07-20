@@ -58,7 +58,7 @@ bool imprimir_cadena(const char* s, float escala, float xy[2], float incx, unsig
     return true;
 }
 
-bool imprimir_hud(char vidas, unsigned long score, enum enemigo_to enemigo_posicion, char scope, lista_t* modelos, SDL_Renderer* renderer){
+bool imprimir_hud(char vidas, unsigned long score, enum enemy_to enemigo_posicion, char scope, lista_t* modelos, SDL_Renderer* renderer){
     float escala=25;
     float incx=25;
     float incy=50;
@@ -87,7 +87,7 @@ bool imprimir_hud(char vidas, unsigned long score, enum enemigo_to enemigo_posic
     }
     xy[0]=5*incx;
     xy[1]-=incy;
-    if(!imprimir_cadena("enemigo TO ", escala, xy, incx, color, modelos, renderer)){
+    if(!imprimir_cadena("ENEMY TO ", escala, xy, incx, color, modelos, renderer)){
         return false;
     }
     xy[0]+=9*incx;
