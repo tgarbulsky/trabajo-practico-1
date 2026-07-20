@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    //Inicialización de pseudoaleatorios
+    //Inicialización de aleatorios
     srand(time(NULL));
 
     //Lectura de modelos
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    //Crear transformación Mundo-Pantalla para coordenadas ya transformadas
+    //Crear transformación mundo-pantalla para coordenadas ya transformadas
     matriz_t* pantalla = matriz_crear_pantalla(VENTANA_ALTO, VENTANA_ANCHO);
     if(pantalla == NULL){
         free(fp);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    //Generar obstáculos aleatorios
+    //generar obstaculos aleatorios
     lista_t* obstaculos = lista_crear();
     if(obstaculos == NULL){
         free(fp);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /*Fin de inicialización*/
+    /*Fin de inicializacion*/
     // END código del alumno
     
     unsigned int ticks = SDL_GetTicks();
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        //Si el jugador ya está muerto, pero sigue la animación, se anulan las acciones
+        //Si el jugador ya está muerto, pero sigue la animacion, se anulan las acciones
         if(vidas==0){
             t_mov=0;
             t_rot=0;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
             rot=ROT_NONE;
         }
 
-        //Si el misil del jugador no está creado pero se ha disparado, lo crea
+        //Si el misil del jugador no esta creado pero se ha disparado, lo crea
         if(misil_activo && misil==NULL){
             misil=malloc(sizeof(cuerpo_t));
             if(misil==NULL){
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
             misil->bloque=MISIL;
         }
 
-        //Si no hay tanque enemigo y la animación de destrucción ya terminó, crea un tanque enemigo nuevo
+        //Si no hay tanque enemigo y la animacion de destruccion ya termino, crea un tanque enemigo nuevo
         if(!enemigo_vivo && t_animacion==0){
             ia=crear_tanque_enemigo(fp->posicion[0], fp->posicion[1], obstaculos);
             if(ia==NULL){
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
         //Movimientos del enemigo
         if(enemigo_vivo){
             tanque_radar(ia);
-            decidir_accion_ia(&ia_accion, &ia_t_accion, ia, fp); //Decide la acción
+            decidir_accion_ia(&ia_accion, &ia_t_accion, ia, fp); //Decide la accion
             ia_acciones(ia, ia_accion, obstaculos, fp); //Ejecuta la acción
             if(ia_t_accion!=0){
                 ia_t_accion--;
@@ -349,12 +349,12 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        //Imprimir elementos del mundo: Horizonte, montañas y luna
+        //Imprimir elementos del mundo: horizonte, montañas y luna
         if(!mundo_imprimir(modelos, transformacion, pantalla, renderer)){
             break;
         }
 
-        if(t_animacion!=0){ //Si se destruyó el enemigo calcula y dibuja la aninación de destrucción
+        if(t_animacion!=0){ //Si se destruyo el enemigo calcula y dibuja la aninacion de destruccion
             if(!animacion_destruccion(ia->posicion, t_animacion, modelos, transformacion, pantalla, renderer)){
                 break;    
             }
@@ -388,19 +388,19 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        //Imprime obstáculos
+        //Imprime obstaculos
         if(!imprimir_obstaculos(obstaculos, modelos, transformacion, pantalla, renderer)){
             break;
         }
 
-        //Desapila la transformación de cuadro
+        //Desapila la transformacion de cuadro
         desapilar_cuadro_transformacion(transformacion);
 
         /*Impresión 2D*/
 
         scope='-';
 
-        //Determina la posición relativa del enemigo
+        //Determina la posicion relativa del enemigo
         if(en_rango_vision_sim(fp, ia, 1)){
             enemigo_posicion=FRONT;
             if(en_rango_vision_sim(fp, ia, 0.15)){
@@ -414,14 +414,14 @@ int main(int argc, char *argv[]) {
             enemigo_posicion=BACK;
         }
 
-        //Impresión de HUD
+        //Impresion de HUD
         if(!imprimir_hud(vidas, score, enemigo_posicion, scope, modelos, renderer)){
             break;
         }
 
-        //Animación de muerte del jugador
+        //Animacion de muerte del jugador
         if(t_muerte!=0){
-            float escala=50; //Tune
+            float escala=50;
             if(!animacion_muerte(t_muerte, escala, vidas, modelos, renderer)){
                 break;
             }
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
     free(misil);
     free(misil_ia);
 
-    //Destruir lista de modelos, lista de obstáculos y pila de transformaciones
+    //Destruir lista de modelos, lista de obstaculos y pila de transformaciones
     lista_destruir(modelos, destruir_modelo);
     lista_destruir(obstaculos, free);
     pila_destruir(transformacion, matriz_destruir);
