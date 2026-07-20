@@ -39,50 +39,46 @@ int main(int argc, char *argv[]) {
 
     int dormir = 0;
     // BEGIN código del alumno
-    /*Inicialización*/
+   /*Inicialización*/
     
     //Inicialización de variables
-    char vidas=VIDAS; //Vidas
-    unsigned long score=0; //Puntuación
-    char t_mov=0; //Tiempo de movimiento (traslación) en cuadros
-    enum tras mov=TRAS_NONE; //Enumerativo de movimiento (traslación)
-    char t_rot=0; //Tiempo de movimiento (rotación) en cuadros
-    enum rot rot=ROT_NONE; //Enumerativo de movimiento (rotación)
-    bool misil_activo=false;
-    int t_misil=0; //Tiempo del misil en cuadros
-    int ia_t_accion=0; //Tiempo de acción del enemigo en cuadros
-    enum acciones_ia ia_accion=IA_NONE; //Enumerativo de acciones del tanque enemigo
-    enum turr turr=TURR_NONE; //Enumerativo de estado de la torreta del tanque enemigo
-    bool ia_misil_activo=false;
-    int ia_t_misil=0; //Tiempo del misil enemigo en cuadros
-    bool enemigo_vivo=false; //Estado del enemigo
-    int t_animacion=0; //Tiempo de animacion de destruccion enemiga en cuadros
-    int t_muerte=0; //Tiempo de animación de muerte del jugador
-    enum enemigo_to enemigo_posicion=FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
-    char scope='-'; //Caracter de modelo de mira
-    //
+    char vidas = VIDAS; //Vidas
+    unsigned long score = 0; //Puntuación
+    char t_mov = 0; //Tiempo de movimiento (traslación) en cuadros
+    enum tras mov = TRAS_NONE; //Enumerativo de movimiento (traslación)
+    char t_rot = 0; //Tiempo de movimiento (rotación) en cuadros
+    enum rot rot = ROT_NONE; //Enumerativo de movimiento (rotación)
+    bool misil_activo = false;
+    int t_misil = 0; //Tiempo del misil en cuadros
+    int ia_t_accion = 0; //Tiempo de acción del enemigo en cuadros
+    enum acciones_ia ia_accion = IA_NONE; //Enumerativo de acciones del tanque enemigo
+    enum turr turr = TURR_NONE; //Enumerativo de estado de la torreta del tanque enemigo
+    bool ia_misil_activo = false;
+    int ia_t_misil = 0; //Tiempo del misil enemigo en cuadros
+    bool enemigo_vivo = false; //Estado del enemigo
+    int t_animacion = 0; //Tiempo de animacion de destruccion enemiga en cuadros
+    int t_muerte = 0; //Tiempo de animación de muerte del jugador
+    enum enemigo_to enemigo_posicion = FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
+    char scope = '-'; //Caracter de modelo de mira
 
     //Inicialización de cuerpos
-    //Alcance mayor al ciclo para asegurar un puntero válido para free
-    tanque_t* fp=NULL; //Jugador (fp: first person)
-    tanque_t* ia=NULL; //Enemigo
-    cuerpo_t* misil=NULL;
-    cuerpo_t* misil_ia=NULL;
+    tanque_t* fp = NULL; //Jugador (fp: first person)
+    tanque_t* ia = NULL; //Enemigo
+    cuerpo_t* misil = NULL;
+    cuerpo_t* misil_ia = NULL;
 
     //Inicializar tanque del jugador en el origen
-    fp=crear_tanque(0, 0, 0); 
-    if(fp==NULL){
+    fp = crear_tanque(0, 0, 0); 
+    if(fp == NULL){
         return 1;
     }
-    //
 
     //Inicialización de pseudoaleatorios
     srand(time(NULL));
-    //
 
     //Lectura de modelos
-    FILE* stl=fopen(RUTA_STL, "rb");
-    if(stl==NULL){
+    FILE* stl = fopen(RUTA_STL, "rb");
+    if(stl == NULL){
         free(fp);
         return 1;
     }
@@ -93,14 +89,14 @@ int main(int argc, char *argv[]) {
         fclose(stl);
         return 1;
     }
-    lista_t* modelos=lista_crear();
-    if(modelos==NULL){
+    lista_t* modelos = lista_crear();
+    if(modelos == NULL){
         free(fp);
         fclose(stl);
         return 1;
     }
     modelo_t* aux;
-    while((aux=leer_modelo(stl, maxlong, unidades))!=NULL){
+    while((aux = leer_modelo(stl, maxlong, unidades)) != NULL){
         if(!lista_insertar_primero(modelos, aux)){
             free(fp);
             lista_destruir(modelos, destruir_modelo);
@@ -109,17 +105,16 @@ int main(int argc, char *argv[]) {
         }
     }
     fclose(stl);
-    //
-    
+
     //Inicialización de la transformación
-    pila_t* transformacion=pila_crear();
-    if(transformacion==NULL){
+    pila_t* transformacion = pila_crear();
+    if(transformacion == NULL){
         free(fp);
         lista_destruir(modelos, destruir_modelo);
         return 1;
     }
-    matriz_t* proyeccion=matriz_crear_proy(4);
-    if(proyeccion==NULL){
+    matriz_t* proyeccion = matriz_crear_proy(4);
+    if(proyeccion == NULL){
         free(fp);
         lista_destruir(modelos, destruir_modelo);
         pila_destruir(transformacion, matriz_destruir);
@@ -131,37 +126,36 @@ int main(int argc, char *argv[]) {
         pila_destruir(transformacion, matriz_destruir);
         return 1;
     }
-    //
-    
+
     //Crear transformación Mundo-Pantalla para coordenadas ya transformadas
-    matriz_t* pantalla=matriz_crear_pantalla(VENTANA_ALTO, VENTANA_ANCHO);
-    if(pantalla==NULL){
+    matriz_t* pantalla = matriz_crear_pantalla(VENTANA_ALTO, VENTANA_ANCHO);
+    if(pantalla == NULL){
         free(fp);
         lista_destruir(modelos, destruir_modelo);
         pila_destruir(transformacion, matriz_destruir);
         return 1;
     }
-    //
 
     //Generar obstáculos aleatorios
-    lista_t* obstaculos=lista_crear();
-    if(obstaculos==NULL){
+    lista_t* obstaculos = lista_crear();
+    if(obstaculos == NULL){
         free(fp);
         lista_destruir(modelos, destruir_modelo);
         pila_destruir(transformacion, matriz_destruir);
+        matriz_destruir(pantalla);
         return 1;
     }
-    for(size_t i=0; i<NRO_OBSTACULOS; i++){
-        cuerpo_t* aux=crear_obstaculo();
-        if(aux==NULL || !lista_insertar_primero(obstaculos, aux)){
+    for(size_t i = 0; i < NRO_OBSTACULOS; i++){
+        cuerpo_t* aux_obs = crear_obstaculo();
+        if(aux_obs == NULL || !lista_insertar_primero(obstaculos, aux_obs)){
             free(fp);
             lista_destruir(obstaculos, free);
             lista_destruir(modelos, destruir_modelo);
             pila_destruir(transformacion, matriz_destruir);
+            matriz_destruir(pantalla);
             return 1;
         }
     }
-    //
 
     /*Fin de inicialización*/
     // END código del alumno
