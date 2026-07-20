@@ -60,13 +60,13 @@ enum enemy_to {FRONT, LEFT, RIGHT, BACK};
 // Estructura que representa un objeto fisico en el mundo 3D
 typedef struct cuerpo{
     bloque_t bloque;
-    float pos[3];
+    float posicion[3];
     float angz;
 }cuerpo_t;
 
 // Estructura que almacena la posicion y las rotaciones del tanque del jugador
 typedef struct tanque{
-    float pos[3];
+    float posicion[3];
     float angz;
     float ang_torreta;
     float ang_radar;
@@ -85,6 +85,6 @@ int random_int(int a, int b);
 float norma_r3(float v1[3], float v2[3]);
 
 // Evalua si existe una colision entre un punto dado y los elementos del escenario
-bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float pos[3], float hitbox);
+bool colisiones(lista_t* obstaculos, float otros_colisionables[3], float posicion[3], float hitbox);
 
 #endif
