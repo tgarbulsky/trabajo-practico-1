@@ -5,9 +5,9 @@ tanque_t* crear_tanque(float x, float y, float angz){
     if(tanque==NULL){
         return NULL;
     }    
-    tanque->pos[0]=x;
-    tanque->pos[1]=y;
-    tanque->pos[2]=0;
+    tanque->posicion[0]=x;
+    tanque->posicion[1]=y;
+    tanque->posicion[2]=0;
     tanque->angz=angz;
     tanque->ang_radar=0;
     tanque->ang_torreta=0;
@@ -18,13 +18,13 @@ tanque_t* crear_tanque_enemigo(float x_fp, float y_fp, lista_t* obstaculos){
     float aux_ang=random_float(0, 2*M_PI);
     float x=x_fp+50*cos(aux_ang);
     float y=y_fp+50*sin(aux_ang);
-    float pos[3]={x, y, 0};
-    while(colisiones(obstaculos, NULL, pos, 5)){
+    float posicion[3]={x, y, 0};
+    while(colisiones(obstaculos, NULL, posicion, 5)){
         float aux_ang=random_float(0, 2*M_PI);
         float x=x_fp+50*cos(aux_ang);
         float y=y_fp+50*sin(aux_ang);
-        pos[0]=x;
-        pos[1]=y;
+        posicion[0]=x;
+        posicion[1]=y;
     }
     float angz=random_float(-M_PI, M_PI);
     return crear_tanque(x, y, angz);
@@ -37,12 +37,12 @@ void tanque_mover(tanque_t* tanque, enum tras tras, lista_t* obstaculos, tanque_
     }else if(tras == TRAS_BWD){
         signo_mov=-1;
     }
-    float new_x=tanque->pos[0]+signo_mov*cos(tanque->angz)*V_TANQUE*1.0/JUEGO_FPS;
-    float new_y=tanque->pos[1]+signo_mov*sin(tanque->angz)*V_TANQUE*1.0/JUEGO_FPS;
-    float new_pos[3]={new_x, new_y, 0};
-    if(!colisiones(obstaculos, otro_tanque->pos, new_pos, 5)){
-        tanque->pos[0] = new_x;
-        tanque->pos[1] = new_y;
+    float new_x=tanque->posicion[0]+signo_mov*cos(tanque->angz)*V_TANQUE*1.0/JUEGO_FPS;
+    float new_y=tanque->posicion[1]+signo_mov*sin(tanque->angz)*V_TANQUE*1.0/JUEGO_FPS;
+    float new_posicion[3]={new_x, new_y, 0};
+    if(!colisiones(obstaculos, otro_tanque->posicion, new_posicion, 5)){
+        tanque->posicion[0] = new_x;
+        tanque->posicion[1] = new_y;
     }
 }
 
@@ -102,8 +102,8 @@ bool _en_rango_vision(tanque_t* pov, tanque_t* obj, float low, float high){
     if(obj==NULL){
         return false;
     }
-    float dy=obj->pos[1]-pov->pos[1];
-    float dx=obj->pos[0]-pov->pos[0];
+    float dy=obj->posicion[1]-pov->posicion[1];
+    float dx=obj->posicion[0]-pov->posicion[0];
     double ang=atan2(dy, dx);
     float pov_ang=pov->angz;
     if(ang<0){
