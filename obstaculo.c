@@ -1,17 +1,15 @@
 #include "obstaculo.h"
-#include <stdlib.h>
 
-lista_t* inicializar_obstaculos() {
-    lista_t* lista = lista_crear();
-    if (lista == NULL) return NULL;
-
-    for (int i = 0; i < NRO_OBSTACULOS; i++) {
-        cuerpo_t* obstaculo = crear_obstaculo();
-        if (obstaculo == NULL) {
-            lista_destruir(lista, free);
-            return NULL;
-        }
-        lista_insertar_ultimo(lista, obstaculo);
+// generador de obstaculos
+cuerpo_t* crear_obstaculo(){
+    cuerpo_t* obstaculo=malloc(sizeof(cuerpo_t));
+    if(obstaculo==NULL){
+        return NULL;
     }
-    return lista;
+    obstaculo->bloque=random_int(CUBO1, PIRAMIDE3);
+    obstaculo->pos[0]=random_float(-150, 150);
+    obstaculo->pos[1]=random_float(-150, 150);
+    obstaculo->pos[2]=0;
+    obstaculo->angz=random_float(-M_PI, M_PI);
+    return obstaculo;
 }
