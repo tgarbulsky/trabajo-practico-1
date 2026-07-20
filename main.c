@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     bool enemigo_vivo=false; //Estado del enemigo
     int t_animacion=0; //Tiempo de animacion de destruccion enemiga en cuadros
     int t_muerte=0; //Tiempo de animación de muerte del jugador
-    enum enemy_to enemy_pos=FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
+    enum enemigo_to enemigo_posicion=FRONT; //Enumerativo de las posiciones relativas del tanque enemigo
     char scope='-'; //Caracter de modelo de mira
     //
 
@@ -234,16 +234,16 @@ int main(int argc, char *argv[]) {
                 break;
             }
             for(size_t i=0; i<2; i++){
-                misil->pos[i]=fp->pos[i];
+                misil->posicion[i]=fp->posicion[i];
             }
-            misil->pos[2]=3;
+            misil->posicion[2]=3;
             misil->angz=fp->angz;
             misil->bloque=MISIL;
         }
 
         //Si no hay tanque enemigo y la animación de destrucción ya terminó, crea un tanque enemigo nuevo
         if(!enemigo_vivo && t_animacion==0){
-            ia=crear_tanque_enemigo(fp->pos[0], fp->pos[1], obstaculos);
+            ia=crear_tanque_enemigo(fp->posicion[0], fp->posicion[1], obstaculos);
             if(ia==NULL){
                 break;
             }
@@ -259,9 +259,9 @@ int main(int argc, char *argv[]) {
                 break;
             }
             for(size_t i=0; i<2; i++){
-                misil_ia->pos[i]=ia->pos[i];
+                misil_ia->posicion[i]=ia->posicion[i];
             }
-            misil_ia->pos[2]=3;
+            misil_ia->posicion[2]=3;
             misil_ia->angz=ia->angz+ia->ang_torreta;
             misil_ia->bloque=MISIL; 
         }
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
         }
 
         if(t_animacion!=0){ //Si se destruyó el enemigo calcula y dibuja la aninación de destrucción
-            if(!animacion_destruccion(ia->pos, t_animacion, modelos, transformacion, pantalla, renderer)){
+            if(!animacion_destruccion(ia->posicion, t_animacion, modelos, transformacion, pantalla, renderer)){
                 break;    
             }
             t_animacion--;
@@ -409,20 +409,20 @@ int main(int argc, char *argv[]) {
 
         //Determina la posición relativa del enemigo
         if(en_rango_vision_sim(fp, ia, 1)){
-            enemy_pos=FRONT;
+            enemigo_posicion=FRONT;
             if(en_rango_vision_sim(fp, ia, 0.15)){
                 scope='+';
             }
         }else if(_en_rango_vision(fp, ia, 1, 2.44)){
-            enemy_pos=LEFT;
+            enemigo_posicion=LEFT;
         }else if(_en_rango_vision(fp, ia, -2.44, -1)){
-            enemy_pos=RIGHT;
+            enemigo_posicion=RIGHT;
         }else{
-            enemy_pos=BACK;
+            enemigo_posicion=BACK;
         }
 
         //Impresión de HUD
-        if(!imprimir_hud(vidas, score, enemy_pos, scope, modelos, renderer)){
+        if(!imprimir_hud(vidas, score, enemigo_posicion, scope, modelos, renderer)){
             break;
         }
 
